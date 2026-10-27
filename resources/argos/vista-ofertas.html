@@ -1,0 +1,300 @@
+<!doctype html>
+<!--
+  Vista de ofertas de Argos (comando argos:vista). Los datos van incrustados en
+  "const D" para que el archivo funcione solo, sin servidor. Marcadores que
+  reemplaza el comando: __DATOS__, __SITIO__, __TITULO__, __DESDE__.
+-->
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>__TITULO__</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--fg:#1f2328;--muted:#6a737d;--line:#e3e6ea;--soft:#f0f1f3;
+  --accent:#ff7a00;--accent-soft:#fff3e6;--purple:#4f46e5;--star:#f0b400;--ok:#16a34a;--warn:#d97706;--bad:#dc2626}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1117;--card:#161b22;--fg:#e6edf3;--muted:#8d96a0;--line:#30363d;--soft:#1f2630;--accent-soft:#2d1d0a}}
+:root[data-theme="dark"]{--bg:#0d1117;--card:#161b22;--fg:#e6edf3;--muted:#8d96a0;--line:#30363d;--soft:#1f2630;--accent-soft:#2d1d0a}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.45 Lato,system-ui,sans-serif;background:var(--bg);color:var(--fg)}
+button,input,select{font:inherit;color:inherit}
+/* Barra superior */
+.top{background:var(--card);border-bottom:3px solid var(--accent);padding:12px 20px;display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;position:sticky;top:0;z-index:20}
+.brand{font-weight:900;font-size:20px;color:var(--accent)}.brand small{display:block;font-size:11px;font-weight:400;color:var(--muted)}
+.search{flex:1;min-width:220px;position:relative}
+.search input{width:100%;padding:9px 12px 9px 34px;border:1px solid var(--line);border-radius:6px;background:var(--soft)}
+.search::before{content:"🔍";position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;opacity:.6}
+.seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{background:var(--card);border:0;padding:8px 12px;cursor:pointer}.seg button.on{background:var(--accent);color:#fff;font-weight:700}
+.btn{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:8px 12px;cursor:pointer}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+.filters-toggle{display:none}
+/* Layout */
+.layout{display:grid;grid-template-columns:270px 1fr;gap:20px;padding:20px;max-width:1800px;margin:0 auto}
+aside{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px;align-self:start;position:sticky;top:76px;max-height:calc(100vh - 96px);overflow-y:auto}
+aside h2{font-size:13px;text-transform:uppercase;letter-spacing:.5px;margin:0 0 12px;display:flex;justify-content:space-between;align-items:center}
+aside h2 button{font-size:12px;text-transform:none;letter-spacing:0;background:none;border:0;color:var(--accent);cursor:pointer;padding:0}
+.f{margin-bottom:16px}.f label.t{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:5px}
+.f select,.f input[type=number],.f input[type=text]{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:5px;background:var(--card)}
+.range2{display:flex;gap:6px;align-items:center}.range2 input{min-width:0}
+.f input[type=range]{width:100%;accent-color:var(--accent)}
+.rv{float:right;color:var(--accent);font-weight:700}
+.checks label{display:flex;align-items:center;gap:7px;font-size:13px;padding:2px 0;cursor:pointer}
+.checks input{accent-color:var(--accent)}.checks .c{margin-left:auto;color:var(--muted);font-size:11px}
+.pills{display:flex;flex-wrap:wrap;gap:5px}.pills button{border:1px solid var(--line);background:var(--card);border-radius:14px;padding:3px 10px;font-size:12px;cursor:pointer}
+.pills button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+/* Resultados */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 14px}.kpi b{display:block;font-size:20px;font-weight:900}.kpi span{color:var(--muted);font-size:12px}
+.active{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;align-items:center;font-size:12px;color:var(--muted)}
+.chip{background:var(--accent-soft);color:var(--fg);border:1px solid var(--accent);border-radius:14px;padding:2px 6px 2px 10px;display:inline-flex;gap:6px;align-items:center}
+.chip button{border:0;background:none;cursor:pointer;color:var(--accent);font-weight:900;padding:0 2px}
+.empty{background:var(--card);border:1px dashed var(--line);border-radius:8px;padding:40px;text-align:center;color:var(--muted)}
+/* Tarjetas */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .15s,transform .15s}
+.card:hover{box-shadow:0 6px 18px #0000001f;transform:translateY(-2px)}
+.card .ph{position:relative;aspect-ratio:16/10;background:var(--soft)}.card .ph img{width:100%;height:100%;object-fit:cover;display:block}
+.card .badge{position:absolute;top:10px;left:10px;background:var(--purple);color:#fff;font-weight:900;font-size:13px;padding:3px 7px;border-radius:5px}
+.card .vence{position:absolute;top:10px;right:10px;background:#000a;color:#fff;font-size:11px;padding:2px 7px;border-radius:10px}
+.card .bd{padding:12px 14px;display:flex;flex-direction:column;gap:6px;flex:1}
+.card .brandname{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px}
+.card h3{font-size:14px;margin:0;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card h3 a{color:inherit;text-decoration:none}.card h3 a:hover{color:var(--accent)}
+.prices{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-top:auto}
+.price{color:var(--accent);font-weight:900;font-size:24px;line-height:1}
+.normal{color:var(--muted);text-decoration:line-through;font-size:13px}
+.best{font-size:11px;color:var(--ok);font-weight:700}
+.meta{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);border-top:1px dashed var(--line);padding-top:8px}
+.stars{position:relative;display:inline-block;color:var(--line);letter-spacing:1px;font-size:14px;line-height:1}.stars span{position:absolute;inset:0 auto 0 0;overflow:hidden;color:var(--star);white-space:nowrap}
+[hidden]{display:none!important}
+.up{color:var(--ok);font-weight:700}.down{color:var(--bad);font-weight:700}.flat{color:var(--muted)}
+.newtag{position:absolute;bottom:10px;left:10px;background:var(--ok);color:#fff;font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px}
+.delta{font-size:12px;border-radius:10px;padding:1px 7px;background:var(--soft)}
+.ret{margin-top:24px}.ret h2{font-size:16px;margin:0 0 8px}
+.cmp{font-size:12px;color:var(--muted);margin:-6px 0 12px}
+.sold b{color:var(--fg)}
+.tagline{font-size:11px;color:var(--muted)}
+/* Tabla */
+.tablewrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:8px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{position:sticky;top:0;background:var(--card);text-align:left;padding:9px 8px;border-bottom:2px solid var(--line);cursor:pointer;white-space:nowrap;font-size:12px;user-select:none}
+th:hover{color:var(--accent)}th.on{color:var(--accent)}th.on::after{content:" ▼"}th.on.asc::after{content:" ▲"}
+td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:middle}tr:hover td{background:var(--accent-soft)}
+td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+td img{width:70px;height:46px;object-fit:cover;border-radius:4px;display:block}
+td.t a{color:inherit;text-decoration:none;font-weight:700}td.t a:hover{color:var(--accent)}td.t small{display:block;color:var(--muted);font-weight:400}
+.pct{background:var(--purple);color:#fff;font-weight:900;font-size:11px;padding:2px 6px;border-radius:4px}
+td .price{font-size:15px}
+.more{display:block;margin:16px auto 0}
+@media(max-width:900px){.layout{grid-template-columns:1fr;padding:12px 16px}aside{position:static;max-height:none;display:none}aside.open{display:block}.filters-toggle{display:inline-block}.top{position:static}}
+</style></head><body>
+<div class="top">
+  <div class="brand">__SITIO__<small id="meta"></small></div>
+  <div class="search"><input type="search" id="q" placeholder="Buscar por título, marca o ID…"></div>
+  <button class="btn filters-toggle" id="ft">Filtros</button>
+  <div class="seg" id="viewSeg"><button data-v="cards" class="on">▦ Tarjetas</button><button data-v="table">☰ Tabla</button></div>
+  <select class="btn" id="sort">
+    <option value="delta_vend:desc">Más vendidos __DESDE__</option><option value="ingreso:desc">Más facturado __DESDE__</option><option value="vendidos:desc">Más vendidos</option><option value="descuento_pct:desc">Mayor descuento</option>
+    <option value="precio_oferta:asc">Precio: menor a mayor</option><option value="precio_oferta:desc">Precio: mayor a menor</option>
+    <option value="ahorro:desc">Mayor ahorro (S/)</option><option value="valoraciones:desc">Más valoraciones</option>
+    <option value="estrellas_5:desc">Mejor calificadas</option><option value="fecha_termino:asc">Vencen antes</option>
+    <option value="titulo:asc">Título A–Z</option>
+  </select>
+  <button class="btn primary" id="export">⤓ Exportar CSV</button>
+</div>
+
+<div class="layout">
+<aside id="aside">
+  <h2>Filtros <button id="reset">Limpiar todo</button></h2>
+  <div class="f"><label class="t">Cambios __DESDE__</label><div class="pills" id="fCambio"></div></div>
+  <div class="f"><label class="t">Categoría</label><div class="checks" id="fCat"></div></div>
+  <div class="f"><label class="t">Subcategoría</label><select id="fSub"><option value="">Todas</option></select></div>
+  <div class="f"><label class="t">Marca</label><input type="text" id="fMarca" list="marcas" placeholder="Escribe una marca…"><datalist id="marcas"></datalist></div>
+  <div class="f"><label class="t">Tipo</label><div class="pills" id="fTipo"></div></div>
+  <div class="f"><label class="t">Precio oferta (S/)</label><div class="range2"><input type="number" id="pMin" placeholder="mín" min="0"><span>–</span><input type="number" id="pMax" placeholder="máx" min="0"></div></div>
+  <div class="f"><label class="t">Descuento mínimo <span class="rv" id="dV">0%</span></label><input type="range" id="fDcto" min="0" max="90" step="5" value="0"></div>
+  <div class="f"><label class="t">Vendidos mínimo</label><div class="pills" id="fVend"></div></div>
+  <div class="f"><label class="t">Calificación mínima</label><div class="pills" id="fStar"></div></div>
+  <div class="f"><label class="t">Valoraciones</label><div class="pills" id="fVal"></div></div>
+  <div class="f"><label class="t">Vence</label><div class="pills" id="fVence"></div></div>
+  <div class="f"><label class="t">Otros</label><div class="checks">
+    <label><input type="checkbox" id="fNormal"> Solo con precio normal</label>
+    <label><input type="checkbox" id="fDisp"> Solo disponibles</label></div></div>
+</aside>
+
+<main>
+  <div class="kpis" id="kpis"></div>
+  <div class="cmp" id="cmp"></div>
+  <div class="active" id="active"></div>
+  <div id="results"></div>
+  <button class="btn more" id="more" hidden>Mostrar más</button>
+  <div class="ret" id="ret"></div>
+</main>
+</div>
+
+<script>
+const D = __DATOS__;
+const O = D.ofertas.map(o => ({ ...o, _cats: o.categoria.split(' | '), _dias: o.fecha_termino ? Math.ceil((new Date(o.fecha_termino.replace(' ', 'T')) - Date.now()) / 864e5) : null }));
+const $ = s => document.querySelector(s);
+const esc = v => String(v ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const sol = v => v === '' || v == null ? '—' : 'S/ ' + Number(v).toLocaleString('es-PE', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const int = v => v === '' || v == null ? '—' : Number(v).toLocaleString('es-PE');
+const empty = v => v === '' || v == null;
+$('#meta').textContent = new Date(D.fecha).toLocaleString('es-PE', {dateStyle: 'medium', timeStyle: 'short'}) + ' · ' + O.length + ' ofertas';
+
+// ---- estado de filtros ----
+const DEF = { q: '', cats: [], sub: '', marca: '', tipo: '', pMin: '', pMax: '', dcto: 0, vend: 0, star: 0, val: '', vence: '', cambio: '', normal: false, disp: false };
+let F = structuredClone(DEF), view = 'cards', sortK = 'delta_vend', asc = false, limit = 60;
+
+// ---- construir controles ----
+const count = f => O.filter(f).length;
+const catNames = [...new Set(O.flatMap(o => o._cats))].sort();
+$('#fCat').innerHTML = catNames.map(c => '<label><input type="checkbox" value="' + esc(c) + '"> ' + esc(c.replace(/-/g, ' ')) + '<span class="c">' + count(o => o._cats.includes(c)) + '</span></label>').join('');
+$('#marcas').innerHTML = [...new Set(O.map(o => o.marca).filter(Boolean))].sort().map(m => '<option value="' + esc(m) + '">').join('');
+const pills = (id, key, opts) => { $(id).innerHTML = opts.map(([v, l]) => '<button data-v="' + v + '">' + l + '</button>').join(''); $(id).dataset.key = key; };
+pills('#fTipo', 'tipo', [['', 'Todos'], ...[...new Set(O.map(o => o.tipo).filter(Boolean))].sort().map(t => [t, t[0].toUpperCase() + t.slice(1)])]);
+pills('#fVend', 'vend', [[0, 'Todos'], [100, '100+'], [500, '500+'], [1000, '1 mil+'], [5000, '5 mil+']]);
+pills('#fStar', 'star', [[0, 'Todas'], [3, '3★+'], [4, '4★+'], [4.5, '4.5★+']]);
+pills('#fVal', 'val', [['', 'Todas'], ['producto', 'Con valoraciones'], ['sin', 'Sin valoraciones']]);
+pills('#fCambio', 'cambio', [['', 'Todas'], ['vend', 'Vendieron'], ['precio', 'Cambió precio'], ['nueva', 'Nuevas']]);
+pills('#fVence', 'vence', [['', 'Cualquiera'], ['7', '≤ 7 días'], ['30', '≤ 30 días'], ['90', '≤ 3 meses'], ['mas', 'Más de 3 meses']]);
+function fillSub() {
+  const subs = [...new Set(O.filter(o => !F.cats.length || o._cats.some(c => F.cats.includes(c))).map(o => o.subcategoria).filter(Boolean))].sort();
+  if (!subs.includes(F.sub)) F.sub = '';
+  $('#fSub').innerHTML = '<option value="">Todas</option>' + subs.map(s => '<option' + (s === F.sub ? ' selected' : '') + '>' + esc(s) + '</option>').join('');
+}
+
+// ---- filtrar ----
+function pass(o) {
+  const q = F.q.toLowerCase();
+  if (q && !(o.titulo + ' ' + o.marca + ' ' + o.id).toLowerCase().includes(q)) return false;
+  if (F.cats.length && !o._cats.some(c => F.cats.includes(c))) return false;
+  if (F.sub && o.subcategoria !== F.sub) return false;
+  if (F.marca && !o.marca.toLowerCase().includes(F.marca.toLowerCase())) return false;
+  if (F.tipo && o.tipo !== F.tipo) return false;
+  if (F.pMin !== '' && !(o.precio_oferta >= +F.pMin)) return false;
+  if (F.pMax !== '' && !(o.precio_oferta <= +F.pMax)) return false;
+  if (F.dcto && !((o.descuento_pct || 0) >= F.dcto)) return false;
+  if (F.vend && !((o.vendidos || 0) >= F.vend)) return false;
+  if (F.star && !(o.estrellas_5 >= F.star)) return false;
+  if (F.val === 'sin' && o.valoraciones) return false;
+  if (F.val && F.val !== 'sin' && !(o.valoraciones && o.valoraciones_de === F.val)) return false;
+  if (F.vence === 'mas' && !(o._dias > 90)) return false;
+  if (F.vence && F.vence !== 'mas' && !(o._dias != null && o._dias <= +F.vence)) return false;
+  if (F.cambio === 'vend' && !(o.delta_vend > 0)) return false;
+  if (F.cambio === 'precio' && empty(o.delta_precio)) return false;
+  if (F.cambio === 'nueva' && !o.nueva) return false;
+  if (F.normal && empty(o.precio_normal)) return false;
+  if (F.disp && (o.estado !== 'disponible' || o.vencido)) return false;
+  return true;
+}
+function sorted(rows) {
+  return rows.sort((a, b) => { const x = a[sortK], y = b[sortK]; if (empty(x) !== empty(y)) return empty(x) ? 1 : -1;
+    return (typeof x === 'number' ? x - y : String(x).localeCompare(String(y))) * (asc ? 1 : -1); });
+}
+
+// ---- pintar ----
+function stars(n) { if (empty(n) || !n) return '<span class="tagline">sin calificación</span>';
+  return '<span class="stars" title="' + n + ' de 5">★★★★★<span style="width:' + (n / 5 * 100) + '%">★★★★★</span></span>'; }
+const dv = (o, monto = true) => !D.fecha_ant ? '' : o.nueva ? '<span class="delta up">nueva</span>' : o.delta_vend > 0 ? '<span class="delta up">+' + int(o.delta_vend) + ' __DESDE__' + (monto && o.ingreso ? ' · ≈ ' + sol(o.ingreso) : '') + '</span>' : o.delta_vend < 0 ? '<span class="delta down">' + int(o.delta_vend) + '</span>' : '<span class="delta flat">sin cambio</span>';
+const dp = o => empty(o.delta_precio) ? '' : '<span class="' + (o.delta_precio < 0 ? 'up' : 'down') + '" title="Ayer ' + sol(o.precio_ant) + '">' + (o.delta_precio < 0 ? '▼ ' : '▲ ') + sol(Math.abs(o.delta_precio)) + '</span>';
+const venceTxt = d => d == null ? '' : d < 0 ? 'vencida' : d === 0 ? 'vence hoy' : d <= 30 ? 'vence en ' + d + ' d' : '';
+function card(o) {
+  return '<div class="card"><div class="ph"><img src="' + esc(o.imagen) + '" loading="lazy" alt="">' +
+    (o.descuento_pct ? '<span class="badge">' + o.descuento_pct + '%</span>' : '') + (venceTxt(o._dias) ? '<span class="vence">' + venceTxt(o._dias) + '</span>' : '') + (o.nueva ? '<span class="newtag">NUEVA</span>' : '') + '</div>' +
+    '<div class="bd"><div class="brandname">' + esc(o.marca || o.subcategoria || '') + '</div>' +
+    '<h3><a href="' + esc(o.url) + '" target="_blank" title="' + esc(o.titulo) + '">' + esc(o.titulo) + '</a></h3>' +
+    '<div class="prices"><span class="price">' + sol(o.precio_oferta) + '</span>' +
+    (o.precio_normal ? '<span class="normal">' + sol(o.precio_normal) + '</span>' : '<span class="best">¡Mejor precio!</span>') + dp(o) + '</div>' +
+    '<div class="meta"><span>' + stars(o.estrellas_5) + (o.valoraciones ? ' (' + int(o.valoraciones) + ')' : '') + '</span><span class="sold">🛍 <b>' + int(o.vendidos) + '</b> vendidos</span></div><div>' + dv(o) + '</div>' +
+    '<div class="tagline">' + esc(o.categoria.replace(/-/g, ' ')) + (o.valoraciones ? ' · valoraciones del ' + esc(o.valoraciones_de) : '') + ' · ID ' + o.id + '</div></div></div>';
+}
+const COLS = [['', ''], ['titulo', 'Oferta'], ['precio_oferta', 'Precio'], ['precio_normal', 'P. normal'], ['descuento_pct', 'Dcto.'], ['ahorro', 'Ahorro'],
+  ['estrellas_5', 'Estrellas'], ['valoraciones', 'Valoraciones'], ['vendidos', 'Vendidos'], ['delta_vend', 'Δ __DESDE__'], ['ingreso', 'Ventas est.'], ['stock_maximo', 'Stock máx.'], ['fecha_termino', 'Vence']];
+function table(rows) {
+  return '<div class="tablewrap"><table><thead><tr>' + COLS.map(([k, l]) => '<th data-k="' + k + '" class="' + (k === sortK ? 'on' + (asc ? ' asc' : '') : '') + '">' + l + '</th>').join('') + '</tr></thead><tbody>' +
+    rows.map(o => '<tr><td><img src="' + esc(o.imagen) + '" loading="lazy" alt=""></td>' +
+      '<td class="t"><a href="' + esc(o.url) + '" target="_blank">' + esc(o.titulo) + '</a><small>' + esc(o.marca) + ' · ' + esc(o.categoria) + (o.subcategoria ? ' / ' + esc(o.subcategoria) : '') + ' · ID ' + o.id + '</small></td>' +
+      '<td class="n"><span class="price">' + sol(o.precio_oferta) + '</span><br>' + dp(o) + '</td><td class="n">' + (o.precio_normal ? '<span class="normal">' + sol(o.precio_normal) + '</span>' : '<span class="best">mejor precio</span>') + '</td>' +
+      '<td class="n">' + (o.descuento_pct ? '<span class="pct">' + o.descuento_pct + '%</span>' : '—') + '</td><td class="n">' + sol(o.ahorro) + '</td>' +
+      '<td class="n">' + stars(o.estrellas_5) + '</td><td class="n">' + int(o.valoraciones) + (o.valoraciones ? '<br><span class="tagline">del ' + esc(o.valoraciones_de) + '</span>' : '') + '</td>' +
+      '<td class="n"><b>' + int(o.vendidos) + '</b></td><td class="n">' + dv(o, false) + '</td><td class="n">' + (o.ingreso ? '<b>' + sol(o.ingreso) + '</b>' : '—') + '</td><td class="n">' + int(o.stock_maximo) + '</td>' +
+      '<td class="n tagline">' + esc((o.fecha_termino || '').slice(0, 10)) + '<br>' + venceTxt(o._dias) + '</td></tr>').join('') + '</tbody></table></div>';
+}
+let current = [];
+function render() {
+  current = sorted(O.filter(pass));
+  const r = current, sum = k => r.reduce((s, o) => s + (Number(o[k]) || 0), 0), cd = r.filter(o => o.descuento_pct);
+  $('#kpis').innerHTML = [['Ofertas', int(r.length) + ' <span class="tagline">de ' + O.length + '</span>'], ['Vendidos', int(sum('vendidos'))],
+    ['Dcto. promedio', cd.length ? Math.round(cd.reduce((s, o) => s + o.descuento_pct, 0) / cd.length) + '%' : '—'],
+    ['Precio promedio', r.length ? sol(sum('precio_oferta') / r.length) : '—'], ['Vendidos __DESDE__', '<i class="up" style="font-style:normal">+' + int(sum('delta_vend')) + '</i>'], ['Ventas estimadas __DESDE__', '<i class="up" style="font-style:normal">' + sol(sum('ingreso')) + '</i>'], ['Cambiaron precio', int(r.filter(o => !empty(o.delta_precio)).length)], ['Nuevas', int(r.filter(o => o.nueva).length)]]
+    .map(([l, v]) => '<div class="kpi"><b>' + v + '</b><span>' + l + '</span></div>').join('');
+  renderChips();
+  const shown = r.slice(0, limit);
+  $('#results').innerHTML = !r.length ? '<div class="empty"><b>Ninguna oferta coincide con estos filtros.</b><br><br><button class="btn" onclick="resetAll()">Limpiar filtros</button></div>'
+    : view === 'cards' ? '<div class="cards">' + shown.map(card).join('') + '</div>' : table(shown);
+  $('#more').hidden = r.length <= limit;
+  $('#more').textContent = 'Mostrar más (' + (r.length - limit) + ' restantes)';
+  syncControls();
+}
+function renderChips() {
+  const c = [];
+  if (F.q) c.push(['q', '"' + F.q + '"']);
+  F.cats.forEach(x => c.push(['cats:' + x, x.replace(/-/g, ' ')]));
+  if (F.sub) c.push(['sub', F.sub]); if (F.marca) c.push(['marca', 'Marca: ' + F.marca]); if (F.tipo) c.push(['tipo', F.tipo]);
+  if (F.pMin !== '' || F.pMax !== '') c.push(['precio', 'S/ ' + (F.pMin || 0) + ' – ' + (F.pMax || '∞')]);
+  if (F.dcto) c.push(['dcto', '≥ ' + F.dcto + '% dcto.']); if (F.vend) c.push(['vend', '≥ ' + int(F.vend) + ' vendidos']);
+  if (F.star) c.push(['star', '≥ ' + F.star + '★']); if (F.val) c.push(['val', 'Valoraciones: ' + F.val]);
+  if (F.vence) c.push(['vence', F.vence === 'mas' ? 'Vence en +3 meses' : 'Vence ≤ ' + F.vence + ' días']);
+  if (F.cambio) c.push(['cambio', {vend: 'Vendieron __DESDE__', precio: 'Cambió precio', nueva: 'Nuevas'}[F.cambio]]);
+  if (F.normal) c.push(['normal', 'Con precio normal']); if (F.disp) c.push(['disp', 'Disponibles']);
+  $('#active').innerHTML = c.length ? 'Filtros activos: ' + c.map(([k, l]) => '<span class="chip">' + esc(l) + '<button data-k="' + esc(k) + '" aria-label="Quitar">×</button></span>').join('') : '';
+}
+function syncControls() {
+  $('#q').value = F.q; $('#fMarca').value = F.marca; $('#pMin').value = F.pMin; $('#pMax').value = F.pMax;
+  $('#fDcto').value = F.dcto; $('#dV').textContent = F.dcto + '%'; $('#fNormal').checked = F.normal; $('#fDisp').checked = F.disp;
+  document.querySelectorAll('#fCat input').forEach(i => i.checked = F.cats.includes(i.value));
+  document.querySelectorAll('.pills').forEach(p => p.querySelectorAll('button').forEach(b => b.classList.toggle('on', String(F[p.dataset.key]) === b.dataset.v)));
+  document.querySelectorAll('#viewSeg button').forEach(b => b.classList.toggle('on', b.dataset.v === view));
+  $('#sort').value = sortK + ':' + (asc ? 'asc' : 'desc');
+}
+const update = () => { limit = 60; render(); };
+function resetAll() { F = structuredClone(DEF); fillSub(); update(); }
+
+// ---- eventos ----
+$('#q').addEventListener('input', e => { F.q = e.target.value; update(); });
+$('#fMarca').addEventListener('input', e => { F.marca = e.target.value; update(); });
+$('#pMin').addEventListener('input', e => { F.pMin = e.target.value; update(); });
+$('#pMax').addEventListener('input', e => { F.pMax = e.target.value; update(); });
+$('#fDcto').addEventListener('input', e => { F.dcto = +e.target.value; update(); });
+$('#fNormal').addEventListener('change', e => { F.normal = e.target.checked; update(); });
+$('#fDisp').addEventListener('change', e => { F.disp = e.target.checked; update(); });
+$('#fSub').addEventListener('change', e => { F.sub = e.target.value; update(); });
+$('#fCat').addEventListener('change', () => { F.cats = [...document.querySelectorAll('#fCat input:checked')].map(i => i.value); fillSub(); update(); });
+document.querySelectorAll('.pills').forEach(p => p.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return; const k = p.dataset.key;
+  F[k] = typeof DEF[k] === 'number' ? +b.dataset.v : b.dataset.v; update(); }));
+$('#active').addEventListener('click', e => {
+  const k = e.target.dataset.k; if (!k) return;
+  if (k.startsWith('cats:')) F.cats = F.cats.filter(c => c !== k.slice(5));
+  else if (k === 'precio') { F.pMin = ''; F.pMax = ''; } else F[k] = DEF[k];
+  fillSub(); update(); });
+$('#reset').onclick = resetAll;
+$('#viewSeg').onclick = e => { const b = e.target.closest('button'); if (b) { view = b.dataset.v; render(); } };
+$('#sort').onchange = e => { const [k, d] = e.target.value.split(':'); sortK = k; asc = d === 'asc'; update(); };
+$('#results').addEventListener('click', e => { const th = e.target.closest('th'); if (!th || !th.dataset.k) return;
+  asc = sortK === th.dataset.k ? !asc : th.dataset.k === 'titulo' || th.dataset.k === 'fecha_termino'; sortK = th.dataset.k; update(); });
+$('#more').onclick = () => { limit += 60; render(); };
+$('#ft').onclick = () => $('#aside').classList.toggle('open');
+$('#export').onclick = () => {
+  const cols = ['id', 'titulo', 'marca', 'categoria', 'subcategoria', 'precio_oferta', 'precio_ant', 'delta_precio', 'precio_normal', 'descuento_pct', 'ahorro', 'estrellas_5', 'valoraciones', 'valoraciones_de', 'vendidos', 'vendidos_ant', 'delta_vend', 'ingreso', 'nueva', 'stock_maximo', 'estado', 'fecha_termino', 'tipo', 'url'];
+  const cell = v => { const s = String(v ?? ''); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const csv = '\uFEFF' + [cols.join(','), ...current.map(o => cols.map(c => cell(o[c])).join(','))].join('\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv'}));
+  a.download = D.sitio + '-' + D.fecha.slice(0, 10) + '-filtrado-' + current.length + '.csv'; a.click();
+};
+const fmt = f => new Date(f).toLocaleString('es-PE', {dateStyle: 'medium', timeStyle: 'short'});
+$('#cmp').innerHTML = D.fecha_ant ? 'Comparado con la foto del ' + fmt(D.fecha_ant) + ' · ' + D.retiradas.length + ' ofertas retiradas desde entonces (al final de la página).<br>Ventas estimadas = vendidos en el periodo × precio de la oferta. Son ventas brutas (no la comisión del sitio), calculadas con el contador público de vendidos, que no está auditado.' : 'Primera foto de este sitio: todavía no hay con qué comparar.';
+$('#ret').innerHTML = D.retiradas.length ? '<h2>Retiradas __DESDE__ (' + D.retiradas.length + ')</h2><div class="tablewrap"><table><thead><tr><th>Oferta</th><th>Precio</th><th>Vendidos</th></tr></thead><tbody>' +
+  D.retiradas.map(o => '<tr><td class="t"><a href="' + esc(o.url) + '" target="_blank">' + esc(o.titulo) + '</a><small>' + esc(o.marca) + ' · ' + esc(o.categoria) + ' · ID ' + o.id + '</small></td><td class="n">' + sol(o.precio_oferta) + '</td><td class="n">' + int(o.vendidos) + '</td></tr>').join('') + '</tbody></table></div>' : '';
+fillSub(); render();
+</script></body></html>

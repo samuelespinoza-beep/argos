@@ -1,0 +1,156 @@
+<!doctype html>
+<!--
+  Plantilla del reporte competitivo de Argos. Copiala a
+  storage/analisis/<AAAAMMDD>-<sitio>/REPORTE.html y reemplaza todo lo que
+  esta entre {{ }} y los bloques de ejemplo. Mantén el CSS y el orden de las
+  secciones. Sin JS ni recursos externos: el archivo debe abrirse solo.
+  Barras: style="--v:NN" con NN = porcentaje 0-100 del maximo de la tabla.
+-->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cuponidad vs {{SITIO}} — {{FECHA}}</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #fff; --text: #1d2330; --muted: #5f6b7a; --border: #e2e6eb;
+    --propio: #e4572e; --rival: #2d6cdf; --ok: #1f8a4c; --warn: #b7791f; --bad: #c0392b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #12151b; --card: #1b2029; --text: #e7eaf0; --muted: #9aa5b4; --border: #2b3240; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 1100px; margin: 0 auto; padding: 32px 16px 64px; }
+  header h1 { margin: 0 0 4px; font-size: 26px; }
+  header p { margin: 0; color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 0; }
+  .chip { border: 1px solid var(--border); background: var(--card); border-radius: 999px; padding: 3px 12px; font-size: 13px; color: var(--muted); }
+  .chip a { color: inherit; }
+  section { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px 22px; margin-top: 20px; }
+  h2 { margin: 0 0 14px; font-size: 19px; }
+  h3 { margin: 18px 0 8px; font-size: 15px; }
+  .resumen { border-left: 4px solid var(--propio); }
+  .resumen p { font-size: 16px; margin: 0 0 8px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+  .kpi { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+  .kpi small { color: var(--muted); display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+  .kpi b { font-size: 24px; display: block; }
+  .kpi span { font-size: 13px; color: var(--muted); }
+  .dos { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 760px) { .dos { grid-template-columns: 1fr; } }
+  .tabla { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { font-size: 12px; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); }
+  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .barra { position: relative; min-width: 120px; }
+  .barra::before { content: ""; position: absolute; inset: 6px auto 6px 0; width: calc(var(--v) * 1%); background: var(--c, var(--rival)); opacity: .22; border-radius: 3px; }
+  .barra span { position: relative; }
+  .propio { --c: var(--propio); }
+  .tag { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
+  .alto { color: var(--bad); } .medio { color: var(--warn); } .bajo { color: var(--ok); }
+  .mejor { color: var(--ok); font-weight: 600; } .peor { color: var(--bad); font-weight: 600; }
+  ul.hechos { margin: 0; padding-left: 20px; } ul.hechos li { margin-bottom: 6px; }
+  .nota { color: var(--muted); font-size: 13px; }
+  .leyenda { display: flex; gap: 16px; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+  .leyenda i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+  footer { margin-top: 24px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+
+<header>
+  <h1>Cuponidad vs {{SITIO}}</h1>
+  <p>Análisis competitivo · {{FECHA}} · generado con Argos</p>
+  <div class="chips">
+    <span class="chip">Historial: {{N}} día(s)</span>
+    <span class="chip">Cuponidad: {{N}} ofertas</span>
+    <span class="chip">{{SITIO}}: {{N}} ofertas</span>
+    <span class="chip">Datos de {{SITIO}}: {{METODO: API / sitemap / HTML}}</span>
+    <span class="chip">📊 <a href="cuponidad-vs-{{sitio}}.xlsx">Descargar Excel</a></span>
+  </div>
+</header>
+
+<section class="resumen">
+  <h2>En resumen</h2>
+  <!-- 3-5 frases. La conclusión más importante primero. -->
+  <p>{{CONCLUSION PRINCIPAL}}</p>
+</section>
+
+<section>
+  <h2>Cifras clave</h2>
+  <div class="kpis">
+    <div class="kpi"><small>Marcas en común</small><b>{{N}}</b><span>{{detalle}}</span></div>
+    <div class="kpi"><small>Marcas solo de ellos</small><b>{{N}}</b><span>oportunidad comercial</span></div>
+    <div class="kpi"><small>Marcas solo nuestras</small><b>{{N}}</b><span>ventaja propia</span></div>
+    <div class="kpi"><small>Precio en marcas comunes</small><b>{{X}} / {{Y}}</b><span>nosotros más barato / ellos más barato</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>Catálogo por categoría</h2>
+  <div class="leyenda"><span><i style="background:var(--propio)"></i>Cuponidad</span><span><i style="background:var(--rival)"></i>{{SITIO}}</span></div>
+  <div class="dos">
+    <div class="tabla">
+      <h3>Cuponidad</h3>
+      <table>
+        <tr><th>Categoría</th><th class="n">Ofertas</th><th class="n">Precio med.</th><th>Vendidos acum.</th></tr>
+        <tr><td>{{Categoria}}</td><td class="n">{{n}}</td><td class="n">S/ {{p}}</td><td class="barra propio" style="--v:100"><span>{{vendidos}}</span></td></tr>
+      </table>
+    </div>
+    <div class="tabla">
+      <h3>{{SITIO}}</h3>
+      <table>
+        <tr><th>Categoría</th><th class="n">Ofertas</th><th class="n">Precio med.</th><th>Vendidos acum.</th></tr>
+        <tr><td>{{Categoria}}</td><td class="n">{{n}}</td><td class="n">S/ {{p}}</td><td class="barra" style="--v:100"><span>{{vendidos}}</span></td></tr>
+      </table>
+    </div>
+  </div>
+  <p class="nota">Vendidos = contador acumulado que muestra cada web (no auditado). No es la venta del periodo.</p>
+</section>
+
+<section>
+  <h2>Qué les está funcionando</h2>
+  <ul class="hechos">
+    <li><b>{{hecho}}</b> — {{cifra y fuente}}</li>
+  </ul>
+  <h3>Marcas que solo tienen ellos (más vendidas)</h3>
+  <div class="tabla"><table>
+    <tr><th>Marca</th><th>Categoría</th><th class="n">Precio desde</th><th>Vendidos</th></tr>
+    <tr><td>{{marca}}</td><td>{{cat}}</td><td class="n">S/ {{p}}</td><td class="barra" style="--v:100"><span>{{n}}</span></td></tr>
+  </table></div>
+</section>
+
+<section>
+  <h2>Precios en marcas que tenemos los dos</h2>
+  <div class="tabla"><table>
+    <tr><th>Marca</th><th>Oferta</th><th class="n">Cuponidad</th><th class="n">{{SITIO}}</th><th class="n">Vendidos nuestros / suyos</th></tr>
+    <tr><td>{{marca}}</td><td>{{oferta}}</td><td class="n peor">S/ {{p}}</td><td class="n mejor">S/ {{p}}</td><td class="n">{{a}} / {{b}}</td></tr>
+  </table></div>
+  <p class="nota">Emparejado por marca; las ofertas equivalentes se revisaron a mano. Detalle completo en la hoja "Precios" del Excel.</p>
+</section>
+
+<section>
+  <h2>Lo que hacemos mejor</h2>
+  <ul class="hechos"><li>{{fortaleza con cifra}}</li></ul>
+</section>
+
+<section>
+  <h2>Recomendaciones para Cuponidad</h2>
+  <div class="tabla"><table>
+    <tr><th>#</th><th>Qué hacer</th><th>Por qué (dato)</th><th>Esfuerzo</th><th>Área</th></tr>
+    <tr><td>1</td><td><b>{{accion}}</b></td><td>{{dato}}</td><td><span class="tag bajo">Bajo</span></td><td>{{Comercial / Precios / Web / Marketing}}</td></tr>
+  </table></div>
+</section>
+
+<section>
+  <h2>Precauciones</h2>
+  <ul class="hechos"><li>{{qué no concluir con estos datos}}</li></ul>
+</section>
+
+<footer>Fuente: base de Argos ({{fechas}}) y revisión de {{url}}. Excel y CSV en esta misma carpeta.</footer>
+</main>
+</body>
+</html>
