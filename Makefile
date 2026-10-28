@@ -53,6 +53,12 @@ vistas: ## Genera la vista de Cuponidad y la de Cuponatic
 	@$(SAIL) artisan argos:vista cuponidad
 	@$(SAIL) artisan argos:vista cuponatic
 
+front: ## Vite en modo desarrollo: la app Vue se recarga al guardar (Ctrl+C para salir)
+	@$(SAIL) npm run dev
+
+build: ## Compila la app Vue para usarla sin "make front"
+	@$(SAIL) npm run build
+
 exportar: ## Excel + CSV Cuponidad vs competidor. Uso: make exportar SITIO=cuponatic
 	@$(SAIL) artisan argos:exportar $(or $(SITIO),cuponatic)
 
@@ -68,4 +74,4 @@ chrome-stop: ## Cierra la ventana de Chrome de depuracion de Argos (no toca tu C
 	@pkill -f "[r]emote-debugging-port=$(CHROME_PORT)" 2>/dev/null && echo "Ventana de depuracion cerrada" || echo "No habia ninguna abierta"
 
 .DEFAULT_GOAL := help
-.PHONY: help dev down restart ps logs clear install migrate test shell scrape vista vistas exportar chrome chrome-stop
+.PHONY: help dev down restart ps logs clear install migrate test shell scrape vista vistas front build exportar chrome chrome-stop

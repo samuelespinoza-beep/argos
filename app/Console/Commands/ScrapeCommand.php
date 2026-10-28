@@ -3,8 +3,11 @@
 namespace App\Console\Commands;
 
 use App\Scrapers\Scraper;
+use App\Services\DatosArgos;
+use App\Services\FotoOfertas;
 use App\Services\RegistrarOfertas;
 use Illuminate\Console\Command;
+use Throwable;
 
 class ScrapeCommand extends Command
 {
@@ -12,7 +15,7 @@ class ScrapeCommand extends Command
 
     protected $description = 'Scrapea los sitios configurados y guarda la foto del dia de cada oferta';
 
-    public function handle(RegistrarOfertas $registrar): int
+    public function handle(RegistrarOfertas $registrar, DatosArgos $datos, FotoOfertas $foto): int
     {
         $configurados = array_keys(config('argos.sitios'));
         $sitios = $this->argument('sitio') ?: $configurados;
@@ -24,6 +27,7 @@ class ScrapeCommand extends Command
         }
 
         $fallo = false;
+        $conFoto = [];
         foreach ($sitios as $sitio) {
             $this->info("Scrapeando {$sitio}...");
 
@@ -44,6 +48,22 @@ class ScrapeCommand extends Command
             if ($corrida->estado !== 'ok') {
                 $this->error("  {$corrida->mensaje}");
                 $fallo = true;
+            }
+            if ($corrida->ofertas_encontradas > 0) {
+                $conFoto[] = $sitio;
+            }
+        }
+
+        // La app Vue lee de Postgres con cache (DatosArgos): se borra la cache de la
+        // foto de hoy para que la proxima visita traiga los datos nuevos. Va aparte:
+        // si falla, la foto del dia ya quedo guardada en la base.
+        if ($conFoto) {
+            try {
+                $datos->olvidar(collect($conFoto)->map(fn ($s) => $foto->fechas($s)->first())->unique()->all());
+                $this->info('Cache de la app actualizada.');
+            } catch (Throwable $e) {
+                report($e);
+                $this->error("No se pudo limpiar la cache de la app: {$e->getMessage()}");
             }
         }
 
