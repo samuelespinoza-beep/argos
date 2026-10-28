@@ -6,7 +6,7 @@ use App\Models\Corrida;
 use Illuminate\Support\Facades\Cache;
 
 /**
- * Los datos que pide la app Vue (rutas /datos/... de routes/web.php), leidos de
+ * Los datos de las paginas del panel (PanelController, via Inertia), leidos de
  * Postgres y guardados en cache (Redis, segun CACHE_STORE del .env).
  *
  * La foto de un dia no cambia una vez tomada, asi que cada respuesta se calcula

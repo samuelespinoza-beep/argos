@@ -1,42 +1,23 @@
 <script setup>
 // Cuponidad vs competidor, oferta por oferta: solo las que existen en los dos sitios,
-// con el precio, lo vendido y el total de cada uno. Datos de /datos/cruce (DatosController).
-import { computed, reactive, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
+// con el precio, lo vendido y el total de cada uno. Datos: PanelController::comparar (props de Inertia).
+import { Head, router } from '@inertiajs/vue3';
+import { computed, reactive, ref } from 'vue';
 import Pills from '../components/Pills.vue';
-import { leerCruce, leerIndiceCruce } from '../lib/datos';
 import { capitalizar, descargarCsv, dia as formatoDia, entero, fechaHora, sol } from '../lib/formato';
 
 const props = defineProps({
-    competidor: { type: String, default: '' }, // vacio = el primero del indice
-    dia: { type: String, default: '' }, // vacio = la fecha mas reciente
+    competidor: { type: String, required: true },
+    fechas: { type: Array, required: true }, // fechas con foto de ambos sitios, para el selector
+    cruce: { type: Object, default: null }, // { propio, competidor, dia, fecha, fecha_ant, desde, ofertas{}, pares[] }; null = sin fechas en comun
 });
-const router = useRouter();
 
 // ---- datos ----
-const D = ref(null);
-const fechas = ref([]);
-const error = ref('');
+const D = computed(() => props.cruce);
+const error = computed(() => (props.cruce ? '' : `No hay fechas con foto de Cuponidad y "${props.competidor}" a la vez. Corre "make scrape".`));
 
-async function cargar() {
-    D.value = null;
-    error.value = '';
-    try {
-        const indice = await leerIndiceCruce();
-        const competidor = props.competidor || Object.keys(indice.competidores)[0];
-        fechas.value = indice.competidores[competidor] ?? [];
-        if (!fechas.value.length) {
-            throw new Error(`No hay fechas con foto de Cuponidad y "${competidor}" a la vez. Corre "make scrape".`);
-        }
-        D.value = await leerCruce(competidor, props.dia || fechas.value[0]);
-        document.title = `Cuponidad vs ${capitalizar(competidor)} – ${formatoDia(D.value.dia)}`;
-    } catch (e) {
-        error.value = e.message;
-    }
-}
-watch(() => [props.competidor, props.dia], cargar, { immediate: true });
-
-const cambiarDia = (d) => router.push(`/comparar/${D.value.competidor}/${d}`);
+// Otra fecha: Inertia pide la pagina al servidor; preserveState mantiene los filtros puestos.
+const cambiarDia = (d) => router.get(`/comparar/${props.competidor}/${d}`, {}, { preserveState: true });
 const nombreA = computed(() => capitalizar(D.value?.propio ?? ''));
 const nombreB = computed(() => capitalizar(D.value?.competidor ?? ''));
 
@@ -149,8 +130,8 @@ function exportar() {
 </script>
 
 <template>
+    <Head :title="D ? `Cuponidad vs ${capitalizar(competidor)} – ${formatoDia(D.dia)}` : 'Ofertas en común'" />
     <div v-if="error" class="aviso">{{ error }}</div>
-    <div v-else-if="!D" class="cargando">Cargando comparación…</div>
     <template v-else>
         <div class="top">
             <div class="brand">

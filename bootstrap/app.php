@@ -16,6 +16,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // sabe que el usuario entro por https y genera los assets de Vite con https.
         // '*' acepta cualquier proxy: bien para desarrollo; en un servidor, poner su IP.
         $middleware->trustProxies(at: '*');
+
+        // Inertia: responde las paginas del panel (primera visita en HTML, luego en JSON).
+        $middleware->web(append: [
+            \App\Http\Middleware\HandleInertiaRequests::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

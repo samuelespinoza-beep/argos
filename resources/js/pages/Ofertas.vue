@@ -1,42 +1,24 @@
 <script setup>
 // Ofertas de un sitio en una fecha, con filtros y los cambios respecto a la foto anterior.
-// Es la misma vista que genera "argos:vista", pero con los datos de /datos/ofertas (DatosController).
+// Es la misma vista que genera "argos:vista". Datos: PanelController::ofertas (props de Inertia).
+import { Head, router } from '@inertiajs/vue3';
 import { computed, reactive, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
 import OfertasTabla from '../components/OfertasTabla.vue';
 import Pills from '../components/Pills.vue';
-import { leerIndice, leerOfertas } from '../lib/datos';
 import { capitalizar, descargarCsv, dia as formatoDia, entero, fechaHora, sol, vacio } from '../lib/formato';
 
 const props = defineProps({
     sitio: { type: String, required: true },
-    dia: { type: String, default: '' }, // vacio = la foto mas reciente
+    fechas: { type: Array, required: true }, // fechas con foto de este sitio, para el selector
+    foto: { type: Object, default: null }, // { sitio, dia, dia_ant, fecha, fecha_ant, desde, ofertas[], retiradas[] }; null = sin fotos
 });
-const router = useRouter();
 
 // ---- datos ----
-const D = ref(null); // el JSON tal cual
-const fechas = ref([]); // fechas con JSON de este sitio, para el selector
-const error = ref('');
+const D = computed(() => props.foto);
+const error = computed(() => (props.foto ? '' : `No hay fotos de "${props.sitio}" en la base. Corre "make scrape".`));
 
-async function cargar() {
-    D.value = null;
-    error.value = '';
-    try {
-        fechas.value = (await leerIndice()).sitios[props.sitio] ?? [];
-        if (!fechas.value.length) {
-            throw new Error(`No hay fotos de "${props.sitio}" en la base. Corre "make scrape".`);
-        }
-        D.value = await leerOfertas(props.sitio, props.dia || fechas.value[0]);
-        document.title = `${capitalizar(props.sitio)} – Ofertas ${formatoDia(D.value.dia)}`;
-    } catch (e) {
-        error.value = e.message;
-    }
-}
-// Se vuelve a cargar cuando cambia la URL (otro sitio u otra fecha).
-watch(() => [props.sitio, props.dia], cargar, { immediate: true });
-
-const cambiarDia = (d) => router.push(`/ofertas/${props.sitio}/${d}`);
+// Otra fecha: Inertia pide la pagina al servidor; preserveState mantiene los filtros puestos.
+const cambiarDia = (d) => router.get(`/ofertas/${props.sitio}/${d}`, {}, { preserveState: true });
 
 // Ofertas con la lista de categorias ya separada (Cuponatic puede tener varias), para filtrar.
 const O = computed(() =>
@@ -184,8 +166,8 @@ function exportar() {
 </script>
 
 <template>
+    <Head :title="D ? `${capitalizar(sitio)} – Ofertas ${formatoDia(D.dia)}` : capitalizar(sitio)" />
     <div v-if="error" class="aviso">{{ error }}</div>
-    <div v-else-if="!D" class="cargando">Cargando ofertas de {{ capitalizar(sitio) }}…</div>
     <template v-else>
         <div class="top">
             <div class="brand">

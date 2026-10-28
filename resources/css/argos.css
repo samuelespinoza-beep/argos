@@ -13,7 +13,7 @@ a{color:inherit}
 .nav .logo{font-weight:900;font-size:16px;letter-spacing:.5px;text-decoration:none;color:var(--accent)}
 .nav a.link{text-decoration:none;opacity:.75;padding:2px 0;border-bottom:2px solid transparent}
 .nav a.link:hover{opacity:1}
-.nav a.router-link-active{opacity:1;border-color:var(--accent)}
+.nav a.activo{opacity:1;border-color:var(--accent)}
 
 /* Barra superior de la pagina */
 .top{background:var(--card);border-bottom:3px solid var(--accent);padding:12px 20px;display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;position:sticky;top:0;z-index:20}
