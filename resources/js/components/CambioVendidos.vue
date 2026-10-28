@@ -1,7 +1,6 @@
 <script setup>
 import { entero, sol } from '../lib/formato';
 
-// Etiqueta con lo que vendio la oferta entre las dos fotos ("+12 desde ayer · ≈ S/ 540.00").
 defineProps({
     oferta: { type: Object, required: true },
     desde: { type: String, required: true },

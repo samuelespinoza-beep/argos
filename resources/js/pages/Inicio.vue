@@ -1,5 +1,4 @@
 <script setup>
-// Portada: una tarjeta por sitio con su ultima foto. Datos: PanelController::inicio.
 import { Head, Link } from '@inertiajs/vue3';
 import { capitalizar, dia, fechaHora } from '../lib/formato';
 

@@ -35,7 +35,6 @@ class ArchivoScraper implements Scraper
                 throw new \RuntimeException("{$this->archivo}: cada oferta necesita external_id, titulo y url");
             }
 
-            // Las claves que falten van en null, como en los demas scrapers.
             $oferta = array_fill_keys(self::CLAVES, null);
             foreach (self::CLAVES as $clave) {
                 $oferta[$clave] = $d[$clave] ?? null;

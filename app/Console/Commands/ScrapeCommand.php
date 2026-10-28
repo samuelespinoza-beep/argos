@@ -54,9 +54,7 @@ class ScrapeCommand extends Command
             }
         }
 
-        // La app Vue lee de Postgres con cache (DatosArgos): se borra la cache de la
-        // foto de hoy para que la proxima visita traiga los datos nuevos. Va aparte:
-        // si falla, la foto del dia ya quedo guardada en la base.
+        // Si falla limpiar la cache, la foto del dia ya quedo guardada en la base.
         if ($conFoto) {
             try {
                 $datos->olvidar(collect($conFoto)->map(fn ($s) => $foto->fechas($s)->first())->unique()->all());

@@ -5,10 +5,8 @@ use App\Scrapers\CuponidadScraper;
 
 return [
 
-    // Zona horaria de las fechas de los snapshots y del horario de la tarea diaria.
     'timezone' => 'America/Lima',
 
-    // Hora (Lima) a la que corre el scraping diario de todos los sitios.
     'hora_diaria' => env('ARGOS_HORA_DIARIA', '06:00'),
 
     'sitios' => [

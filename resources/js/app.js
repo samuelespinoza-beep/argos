@@ -3,8 +3,6 @@ import { createApp, h } from 'vue';
 import Principal from './layouts/Principal.vue';
 import '../css/argos.css';
 
-// Inertia: Laravel dice que pagina mostrar (Inertia::render('Ofertas', ...)) y aqui se
-// busca el componente en resources/js/pages. Todas las paginas usan el layout Principal (menu).
 createInertiaApp({
     resolve: (nombre) => import.meta.glob('./pages/*.vue', { eager: true })[`./pages/${nombre}.vue`],
     layout: () => Principal,

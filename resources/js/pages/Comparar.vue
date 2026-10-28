@@ -1,6 +1,4 @@
 <script setup>
-// Cuponidad vs competidor, oferta por oferta: solo las que existen en los dos sitios,
-// con el precio, lo vendido y el total de cada uno. Datos: PanelController::comparar (props de Inertia).
 import { Head, router } from '@inertiajs/vue3';
 import { computed, reactive, ref } from 'vue';
 import Pills from '../components/Pills.vue';
@@ -8,20 +6,17 @@ import { capitalizar, descargarCsv, dia as formatoDia, entero, fechaHora, sol } 
 
 const props = defineProps({
     competidor: { type: String, required: true },
-    fechas: { type: Array, required: true }, // fechas con foto de ambos sitios, para el selector
+    fechas: { type: Array, required: true },
     cruce: { type: Object, default: null }, // { propio, competidor, dia, fecha, fecha_ant, desde, ofertas{}, pares[] }; null = sin fechas en comun
 });
 
-// ---- datos ----
 const D = computed(() => props.cruce);
 const error = computed(() => (props.cruce ? '' : `No hay fechas con foto de Cuponidad y "${props.competidor}" a la vez. Corre "make scrape".`));
 
-// Otra fecha: Inertia pide la pagina al servidor; preserveState mantiene los filtros puestos.
 const cambiarDia = (d) => router.get(`/comparar/${props.competidor}/${d}`, {}, { preserveState: true });
 const nombreA = computed(() => capitalizar(D.value?.propio ?? ''));
 const nombreB = computed(() => capitalizar(D.value?.competidor ?? ''));
 
-// Cada par con atajos: a = nuestra oferta, b = la del competidor, ganaPrecio = quien es mas barato.
 const pares = computed(() =>
     (D.value?.pares ?? []).map((p) => {
         const a = p[D.value.propio];
@@ -33,7 +28,6 @@ const pares = computed(() =>
     }),
 );
 
-// ---- filtros y orden ----
 const DEF = { q: '', precio: '', confianza: '', categoria: '', cambio: '' };
 const F = reactive({ ...DEF });
 const orden = ref('a.vendidos');
@@ -52,7 +46,6 @@ const CAMBIOS = {
     retirada: (o) => o.retirada,
 };
 
-// Valor de una columna a partir de su clave ("a.precio" -> par.a.precio).
 const valor = (p, k) => k.split('.').reduce((v, parte) => v?.[parte], p);
 
 // conPrecio = false ignora el filtro de precio (lo usan las tarjetas de precio para contar).
@@ -72,7 +65,7 @@ const filtrados = computed(() => {
         .sort((x, y) => {
             const vx = valor(x, orden.value);
             const vy = valor(y, orden.value);
-            if ((vx == null) !== (vy == null)) return vx == null ? 1 : -1; // los vacios al final
+            if ((vx == null) !== (vy == null)) return vx == null ? 1 : -1;
             return (typeof vx === 'number' ? vx - vy : String(vx).localeCompare(String(vy))) * dir;
         });
 });
@@ -82,7 +75,6 @@ function ordenarPor(k) {
     orden.value = k;
 }
 
-// ---- KPIs (sobre lo filtrado) ----
 const kpis = computed(() => {
     const r = filtrados.value;
     const suma = (k) => r.reduce((s, p) => s + (Number(valor(p, k)) || 0), 0);
@@ -92,11 +84,10 @@ const kpis = computed(() => {
     };
 });
 
-// ---- Tarjetas de precio: cuentan sin el filtro de precio (si no, al elegir una las otras marcarian 0) ----
+// Las tarjetas de precio cuentan sin el filtro de precio: si no, al elegir una las otras marcarian 0.
 const precios = computed(() => {
     const base = pares.value.filter((p) => pasa(p, false));
     const grupo = (g) => base.filter((p) => p.ganaPrecio === g);
-    // Mayor diferencia en soles dentro del grupo ("hasta S/ 30 mas barato").
     const hasta = (lista) => Math.max(0, ...lista.map((p) => Math.abs(p.a.precio - p.b.precio)));
     return [
         { clave: 'a', n: grupo('a').length, texto: `${nombreA.value} más barata`, detalle: grupo('a').length ? `ganamos en precio · hasta ${sol(hasta(grupo('a')))} menos` : 'ganamos en precio', clase: 'cmp-k-verde' },
@@ -104,7 +95,6 @@ const precios = computed(() => {
         { clave: 'b', n: grupo('b').length, texto: `${nombreB.value} más barata`, detalle: grupo('b').length ? `perdemos en precio · hasta ${sol(hasta(grupo('b')))} menos` : 'perdemos en precio', clase: 'cmp-k-rojo' },
     ];
 });
-// Clic en una tarjeta de precio: filtra por ese grupo; un segundo clic quita el filtro.
 const alternarPrecio = (g) => (F.precio = F.precio === g ? '' : g);
 
 const columnas = computed(() => [
@@ -113,7 +103,6 @@ const columnas = computed(() => [
     ['b.precio', `Precio ${nombreB.value}`], ['b.vendidos', `Vendidos ${nombreB.value}`], ['b.total', `Total ${nombreB.value}`],
 ]);
 
-// Vendidos del periodo: "+N", "nueva" si no estaba en la foto anterior, "retirada" si ya no esta.
 const vend = (o) => (o.retirada ? 'retirada' : o.nueva ? 'nueva' : o.vendidos == null ? '—' : `+${entero(o.vendidos)}`);
 
 function exportar() {
@@ -152,7 +141,6 @@ function exportar() {
                 <div class="kpi"><b>{{ sol(kpis.totalA) }} <small class="cmp-vs">vs {{ sol(kpis.totalB) }}</small></b><span>Total {{ D.desde }} ({{ nombreA }} vs {{ nombreB }})</span></div>
             </div>
 
-            <!-- Quien tiene el mejor precio. Cada tarjeta filtra la tabla; un segundo clic quita el filtro. -->
             <div class="kpis cmp-precios">
                 <button v-for="g in precios" :key="g.clave" class="kpi kpi-filtro" :class="[g.clase, { on: F.precio === g.clave }]" :title="`Ver solo: ${g.texto}`" @click="alternarPrecio(g.clave)">
                     <b>{{ g.n }}</b><span>{{ g.texto }}</span><small>{{ g.detalle }}</small>
@@ -219,7 +207,6 @@ function exportar() {
 <style scoped>
 .cmp-pagina { max-width: 1600px; margin: 0 auto; padding: 20px; }
 .cmp-vs { font-size: 13px; font-weight: 700; color: var(--muted); }
-/* Tarjetas de precio: borde izquierdo de color segun si nos conviene o no. */
 .cmp-precios .kpi { border-left-width: 4px; }
 .cmp-precios .kpi > span { display: block; color: var(--fg); font-weight: 700; font-size: 13px; }
 .cmp-precios .kpi small { display: block; color: var(--muted); font-size: 11.5px; margin-top: 2px; }
@@ -233,12 +220,10 @@ function exportar() {
 .cmp-filtros select { padding: 6px 9px; border: 1px solid var(--line); border-radius: 5px; background: var(--card); min-width: 200px; }
 .cmp { margin: 0 0 12px; }
 .centro { text-align: center; }
-/* Lineas que separan la columna Oferta, el bloque de Cuponidad y el de la competencia. */
 .cmp-grupo { border-left: 2px solid var(--line); }
 .cmp-otro { font-weight: 400 !important; }
 .cmp-retirada { display: inline-block; margin-left: 4px; background: #dc26261f; color: var(--bad); border: 1px solid #dc262655; border-radius: 5px; padding: 0 5px; font-size: 10.5px; font-weight: 700; }
 .cmp-media { display: inline-block; margin-left: 4px; background: #d977061f; color: var(--warn); border: 1px solid #d9770655; border-radius: 5px; padding: 0 5px; font-size: 10.5px; font-weight: 700; }
-/* El precio mas barato del par en verde; el que vendio mas, en verde tambien. */
 .price.cmp-gana { color: var(--ok); }
 .cmp-mas { color: var(--ok); }
 </style>

@@ -12,12 +12,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Confia en las cabeceras X-Forwarded-* del proxy (ngrok, Cloudflare...): asi Laravel
-        // sabe que el usuario entro por https y genera los assets de Vite con https.
-        // '*' acepta cualquier proxy: bien para desarrollo; en un servidor, poner su IP.
+        // Detras de un proxy con https (ngrok, CloudFront) los assets se generan con https.
+        // '*' confia en cualquier proxy: en un servidor conviene poner su IP.
         $middleware->trustProxies(at: '*');
 
-        // Inertia: responde las paginas del panel (primera visita en HTML, luego en JSON).
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
         ]);

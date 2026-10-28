@@ -1,5 +1,4 @@
 <!doctype html>
-{{-- Vista raiz de Inertia: carga la app Vue y @inertia pinta la pagina que eligio el controlador. --}}
 <html lang="es">
 <head>
     <meta charset="utf-8">

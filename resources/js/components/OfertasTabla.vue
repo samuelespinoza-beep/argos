@@ -7,10 +7,9 @@ defineProps({
     ofertas: { type: Array, required: true },
     desde: { type: String, required: true },
     comparada: { type: Boolean, default: false },
-    orden: { type: String, required: true }, // columna por la que se ordena
+    orden: { type: String, required: true },
     asc: { type: Boolean, default: false },
 });
-// Al hacer clic en un encabezado se avisa a la pagina, que es la que guarda el orden.
 const emit = defineEmits(['ordenar']);
 
 // [campo, etiqueta, centrada]

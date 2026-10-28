@@ -8,11 +8,6 @@ use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
 {
-    /**
-     * Vista Blade que carga la primera visita (resources/views/app.blade.php).
-     *
-     * @var string
-     */
     protected $rootView = 'app';
 
     public function version(Request $request): ?string
@@ -20,12 +15,7 @@ class HandleInertiaRequests extends Middleware
         return parent::version($request);
     }
 
-    /**
-     * Props que reciben todas las paginas. "sitios" arma el menu de arriba
-     * (layouts/Principal.vue); sale del indice en cache, no consulta la base.
-     *
-     * @return array<string, mixed>
-     */
+    /** "sitios" arma el menu de arriba en todas las paginas. */
     public function share(Request $request): array
     {
         return [

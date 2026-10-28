@@ -6,20 +6,16 @@ use App\Models\Corrida;
 use Illuminate\Support\Facades\Cache;
 
 /**
- * Los datos de las paginas del panel (PanelController, via Inertia), leidos de
- * Postgres y guardados en cache (Redis, segun CACHE_STORE del .env).
- *
- * La foto de un dia no cambia una vez tomada, asi que cada respuesta se calcula
- * una vez y las siguientes visitas no tocan la base. argos:scrape llama a
- * olvidar() al terminar, para que la foto nueva se vea en la proxima visita.
+ * Datos de las paginas del panel, con cache. La foto de un dia no cambia una vez
+ * tomada, asi que se calcula una vez y las siguientes visitas no tocan la base.
+ * argos:scrape llama a olvidar() al terminar para que se vea la foto nueva.
  */
 class DatosArgos
 {
-    private const DURACION = 60 * 60 * 24 * 7; // 7 dias
+    private const DURACION = 60 * 60 * 24 * 7;
 
     public function __construct(private FotoOfertas $foto, private CruceOfertas $cruce) {}
 
-    /** Sitios y fechas con foto, y competidores con fechas en comun con Cuponidad (para el cruce). */
     public function indice(): array
     {
         return Cache::remember('argos:indice', self::DURACION, function () {
@@ -29,7 +25,6 @@ class DatosArgos
             $propias = collect($sitios[CruceOfertas::PROPIO] ?? []);
 
             return [
-                // Fin del ultimo scraping (para "Último scraping" en Inicio).
                 'actualizado' => Corrida::whereNotNull('terminada_at')->latest('terminada_at')->first()?->terminada_at->toIso8601ZuluString(),
                 'propio' => CruceOfertas::PROPIO,
                 'sitios' => $sitios->all(),
@@ -40,19 +35,16 @@ class DatosArgos
         });
     }
 
-    /** Foto de un sitio en una fecha. Lanza InvalidArgumentException si no hay foto. */
     public function ofertas(string $sitio, string $fecha): array
     {
         return Cache::remember("argos:ofertas:{$sitio}:{$fecha}", self::DURACION, fn () => $this->foto->armar($sitio, $fecha));
     }
 
-    /** Ofertas en comun entre Cuponidad y un competidor en una fecha. */
     public function cruce(string $competidor, string $fecha): array
     {
         return Cache::remember("argos:cruce:{$competidor}:{$fecha}", self::DURACION, fn () => $this->cruce->armar($competidor, $fecha));
     }
 
-    /** Borra de la cache el indice y lo de esas fechas (despues de un scraping). */
     public function olvidar(array $fechas): void
     {
         Cache::forget('argos:indice');

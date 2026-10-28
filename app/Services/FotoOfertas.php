@@ -11,13 +11,12 @@ use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 /**
- * Arma la "foto" de un sitio en una fecha: sus ofertas con los cambios respecto
- * a una foto anterior (vendidos, ventas estimadas, precio, nuevas y retiradas).
- * La usan argos:vista (HTML autocontenido) y DatosArgos (datos de la app Vue).
+ * La "foto" de un sitio en una fecha: sus ofertas con los cambios respecto a una
+ * foto anterior (vendidos, ventas estimadas, precio, nuevas y retiradas).
  */
 class FotoOfertas
 {
-    /** Fechas (AAAA-MM-DD) con foto de ese sitio, de la mas reciente a la mas antigua. */
+    /** De la mas reciente a la mas antigua. */
     public function fechas(string $sitio): Collection
     {
         return OfertaSnapshot::query()
@@ -58,7 +57,6 @@ class FotoOfertas
         ];
     }
 
-    /** Hora (UTC, ISO) a la que empezo la corrida que tomo esa foto. */
     private function capturadoEl(string $sitio, string $fecha): ?string
     {
         $corridaId = OfertaSnapshot::query()
@@ -123,7 +121,6 @@ class FotoOfertas
         }, $filas);
     }
 
-    /** Ofertas que estaban en la foto anterior y ya no en esta. */
     private function retiradas(string $sitio, string $fecha, string $contra): array
     {
         $filas = DB::select(<<<'SQL'

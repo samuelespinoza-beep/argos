@@ -7,11 +7,6 @@ use App\Services\DatosArgos;
 use Inertia\Inertia;
 use Inertia\Response;
 
-/**
- * Paginas del panel (Inertia): cada metodo elige el componente Vue de
- * resources/js/pages y le pasa los datos como props. Los datos salen de
- * Postgres con cache en Redis (DatosArgos).
- */
 class PanelController extends Controller
 {
     public function __construct(private DatosArgos $datos) {}
@@ -21,7 +16,6 @@ class PanelController extends Controller
         return Inertia::render('Inicio', ['indice' => $this->datos->indice()]);
     }
 
-    /** /ofertas/{sitio}/{dia?}: sin dia, la foto mas reciente. */
     public function ofertas(string $sitio, ?string $dia = null): Response
     {
         abort_unless(array_key_exists($sitio, config('argos.sitios')), 404);
@@ -33,12 +27,10 @@ class PanelController extends Controller
         return Inertia::render('Ofertas', [
             'sitio' => $sitio,
             'fechas' => $fechas,
-            // null = el sitio aun no tiene fotos (la pagina muestra el aviso).
             'foto' => $dia ? $this->comoObjeto($this->datos->ofertas($sitio, $dia)) : null,
         ]);
     }
 
-    /** /comparar/{competidor?}/{dia?}: sin competidor, el primero; sin dia, el mas reciente en comun. */
     public function comparar(?string $competidor = null, ?string $dia = null): Response
     {
         $competidores = $this->datos->indice()['competidores'];
@@ -52,15 +44,13 @@ class PanelController extends Controller
         return Inertia::render('Comparar', [
             'competidor' => $competidor,
             'fechas' => $fechas,
-            // null = no hay fechas con foto de ambos sitios.
             'cruce' => $dia ? $this->comoObjeto($this->datos->cruce($competidor, $dia)) : null,
         ]);
     }
 
     /**
-     * Inertia recorre clave por clave todo prop que sea un arreglo (busca props diferidas,
-     * opcionales, etc.): con ~1,100 ofertas x 30 campos eso tardaba ~1.6 s por visita.
-     * Como objeto (stdClass) lo deja pasar tal cual al JSON: ~10 ms, mismo resultado.
+     * Inertia recorre clave por clave todo prop que sea un arreglo: con ~1,100 ofertas
+     * eso tardaba ~1.6 s por visita. Como objeto (stdClass) pasa directo al JSON (~10 ms).
      */
     private function comoObjeto(array $datos): object
     {

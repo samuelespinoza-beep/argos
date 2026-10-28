@@ -5,25 +5,21 @@ namespace App\Services;
 use Illuminate\Support\Str;
 
 /**
- * Empareja las ofertas de Cuponidad con las de un competidor en la misma fecha:
- * misma marca + titulos parecidos + precio parecido. Sirve para ver, oferta por
- * oferta, el precio y lo vendido en cada sitio (pagina /comparar de la app Vue).
+ * Empareja las ofertas de Cuponidad con las de un competidor en la misma fecha.
  *
- * Puntaje de un par = parecido del titulo (Jaccard de palabras, 0..1)
- *                   + 0.5 si el precio es igual (±1%) o 0.25 si difiere menos de 15%.
+ * Puntaje de un par (misma marca) = parecido del titulo (Jaccard de palabras, 0..1)
+ *                                 + 0.5 si el precio es igual (±1%) o 0.25 si difiere menos de 15%.
  * Cada oferta se empareja con una sola del otro sitio (la de mayor puntaje).
  */
 class CruceOfertas
 {
     public const PROPIO = 'cuponidad';
 
-    /** Por debajo de esto no se considera la misma oferta. */
     private const MINIMO = 0.6;
 
-    /** Desde aqui la coincidencia es de confianza "alta"; entre MINIMO y esto, "media" (revisar con el link). */
+    /** Entre MINIMO y ALTA la coincidencia es "media": probablemente la misma, hay que revisarla. */
     private const ALTA = 0.7;
 
-    /** Palabras que no ayudan a distinguir una oferta de otra. */
     private const VACIAS = ['de', 'la', 'el', 'en', 'y', 'o', 'para', 'con', 'por', 'del', 'los', 'las', 'a', '1', '2',
         'un', 'una', 'x', 'mas', 'todos', 'dias', 'lunes', 'domingo'];
 
@@ -56,10 +52,9 @@ class CruceOfertas
     }
 
     /**
-     * 1) Se emparejan las ofertas vigentes de ambos sitios (una retirada nunca le quita
-     *    la pareja a una vigente).
-     * 2) Las vigentes que quedaron solas se buscan entre las retiradas del otro sitio
-     *    desde la foto anterior: "la tenemos los dos, pero ellos la sacaron hoy".
+     * Primero se emparejan las vigentes entre si, para que una retirada nunca le quite
+     * la pareja a una vigente. Las vigentes que quedan solas se buscan entre las
+     * retiradas del otro sitio ("la teniamos los dos, pero ellos la sacaron").
      */
     private function emparejarConRetiradas(array $propio, array $otro): array
     {
@@ -77,7 +72,6 @@ class CruceOfertas
         ];
     }
 
-    /** Una retirada (de FotoOfertas) con los campos de una oferta: precio de la foto anterior, sin ventas. */
     private function comoRetirada(array $r): array
     {
         return [
@@ -97,7 +91,6 @@ class CruceOfertas
             }
         }
 
-        // Todos los candidatos de la misma marca con su puntaje.
         $candidatos = [];
         foreach ($propias as $a) {
             $clave = $this->claveMarca($a['marca']);
@@ -136,7 +129,6 @@ class CruceOfertas
         return $titulo + ($difPrecio < 0.01 ? 0.5 : ($difPrecio < 0.15 ? 0.25 : 0));
     }
 
-    /** Palabras del titulo sin tildes, sin palabras vacias y sin las de la marca. */
     private function palabras(string $titulo, ?string $marca): array
     {
         $partir = fn (?string $s) => preg_split('/[^a-z0-9]+/', Str::lower(Str::ascii($s ?? '')), -1, PREG_SPLIT_NO_EMPTY);
@@ -144,7 +136,6 @@ class CruceOfertas
         return array_values(array_unique(array_diff($partir($titulo), self::VACIAS, $partir($marca))));
     }
 
-    /** Marca sin tildes, mayusculas ni simbolos: "LA BISTECCA" y "La Bistecca" -> "labistecca". */
     private function claveMarca(?string $marca): string
     {
         return preg_replace('/[^a-z0-9]/', '', Str::lower(Str::ascii($marca ?? '')));
@@ -161,9 +152,7 @@ class CruceOfertas
             'vendidos' => $o['delta_vend'],
             'total' => $o['ingreso'],
             'nueva' => $o['nueva'],
-            // Cuanto cambio el precio desde la foto anterior (null si no cambio).
             'cambio_precio' => $o['delta_precio'],
-            // Estaba en la foto anterior y ya no (el precio es el de la foto anterior).
             'retirada' => $o['retirada'] ?? false,
         ];
     }

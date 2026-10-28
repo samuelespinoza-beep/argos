@@ -1,5 +1,3 @@
-// Formateo compartido por las paginas y componentes de Argos.
-
 export const vacio = (v) => v === '' || v == null;
 
 export const sol = (v) =>

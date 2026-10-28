@@ -1,6 +1,4 @@
 <script setup>
-// Ofertas de un sitio en una fecha, con filtros y los cambios respecto a la foto anterior.
-// Es la misma vista que genera "argos:vista". Datos: PanelController::ofertas (props de Inertia).
 import { Head, router } from '@inertiajs/vue3';
 import { computed, reactive, ref, watch } from 'vue';
 import OfertasTabla from '../components/OfertasTabla.vue';
@@ -9,25 +7,21 @@ import { capitalizar, descargarCsv, dia as formatoDia, entero, fechaHora, sol, v
 
 const props = defineProps({
     sitio: { type: String, required: true },
-    fechas: { type: Array, required: true }, // fechas con foto de este sitio, para el selector
+    fechas: { type: Array, required: true },
     foto: { type: Object, default: null }, // { sitio, dia, dia_ant, fecha, fecha_ant, desde, ofertas[], retiradas[] }; null = sin fotos
 });
 
-// ---- datos ----
 const D = computed(() => props.foto);
 const error = computed(() => (props.foto ? '' : `No hay fotos de "${props.sitio}" en la base. Corre "make scrape".`));
 
-// Otra fecha: Inertia pide la pagina al servidor; preserveState mantiene los filtros puestos.
 const cambiarDia = (d) => router.get(`/ofertas/${props.sitio}/${d}`, {}, { preserveState: true });
 
-// Ofertas con la lista de categorias ya separada (Cuponatic puede tener varias), para filtrar.
 const O = computed(() =>
     (D.value?.ofertas ?? []).map((o) => ({ ...o, _cats: o.categoria.split(' | ') })),
 );
 const desde = computed(() => D.value?.desde ?? '');
 const comparada = computed(() => !!D.value?.fecha_ant);
 
-// ---- estado de filtros ----
 const DEF = { q: '', cats: [], sub: '', marca: '', tipo: '', cambio: '' };
 const F = reactive(structuredClone(DEF));
 const orden = ref('delta_vend');
@@ -36,10 +30,8 @@ const limite = ref(60);
 const filtrosAbiertos = ref(false);
 
 const limpiar = () => Object.assign(F, structuredClone(DEF));
-// Al cambiar cualquier filtro u orden se vuelve a mostrar solo la primera tanda.
 watch([F, orden, asc], () => (limite.value = 60));
 
-// ---- opciones de los controles ----
 const categorias = computed(() =>
     [...new Set(O.value.flatMap((o) => o._cats))].sort().map((c) => ({ c, n: O.value.filter((o) => o._cats.includes(c)).length })),
 );
@@ -77,13 +69,11 @@ const ordenSelect = computed({
         asc.value = d === 'asc';
     },
 });
-// Clic en un encabezado de la tabla: misma columna invierte; columna nueva empieza descendente (salvo texto y fecha).
 function ordenarPor(k) {
     asc.value = orden.value === k ? !asc.value : k === 'titulo' || k === 'fecha_termino';
     orden.value = k;
 }
 
-// ---- filtrar y ordenar ----
 // conCambio = false ignora el filtro "Cambios" (lo usan los contadores de las tarjetas-filtro).
 function pasa(o, conCambio = true) {
     const q = F.q.toLowerCase();
@@ -100,8 +90,6 @@ function pasa(o, conCambio = true) {
     return true;
 }
 
-// Retiradas desde la foto anterior, con la busqueda, la categoria y la marca aplicadas.
-// Con el filtro "Retiradas" su tabla reemplaza a la principal; si no, va al final.
 const verRetiradas = computed(() => F.cambio === 'retirada');
 const retiradas = computed(() => {
     const q = F.q.toLowerCase();
@@ -115,13 +103,12 @@ const filtradas = computed(() => {
     return O.value.filter((o) => pasa(o)).sort((a, b) => {
         const x = a[k];
         const y = b[k];
-        if (vacio(x) !== vacio(y)) return vacio(x) ? 1 : -1; // los vacios siempre al final
+        if (vacio(x) !== vacio(y)) return vacio(x) ? 1 : -1;
         return (typeof x === 'number' ? x - y : String(x).localeCompare(String(y))) * dir;
     });
 });
 const visibles = computed(() => filtradas.value.slice(0, limite.value));
 
-// ---- KPIs ----
 const kpis = computed(() => {
     const r = filtradas.value;
     const suma = (k) => r.reduce((s, o) => s + (Number(o[k]) || 0), 0);
@@ -134,10 +121,8 @@ const kpis = computed(() => {
         nuevas: base.filter((o) => o.nueva).length,
     };
 });
-// Clic en "Cambiaron precio" o "Nuevas": activa ese filtro, o lo quita si ya estaba activo.
 const alternarCambio = (valor) => (F.cambio = F.cambio === valor ? '' : valor);
 
-// ---- chips de filtros activos ----
 const chips = computed(() => {
     const c = [];
     if (F.q) c.push(['q', `"${F.q}"`]);
@@ -153,7 +138,6 @@ function quitarChip(k) {
     else F[k] = DEF[k];
 }
 
-// ---- exportar ----
 function exportar() {
     if (verRetiradas.value) {
         const cols = ['id', 'titulo', 'marca', 'categoria', 'precio_oferta', 'vendidos', 'url'];
@@ -213,7 +197,6 @@ function exportar() {
                 <div class="kpis">
                     <div class="kpi"><b class="up">+{{ entero(kpis.deltaVend) }}</b><span>Vendidos {{ desde }}</span></div>
                     <div class="kpi"><b class="up">{{ sol(kpis.ingreso) }}</b><span>Ventas estimadas {{ desde }}</span></div>
-                    <!-- Estas dos tarjetas filtran la tabla; un segundo clic quita el filtro. -->
                     <button class="kpi kpi-filtro" :class="{ on: F.cambio === 'precio' }" title="Ver solo las que cambiaron precio" @click="alternarCambio('precio')">
                         <b>{{ entero(kpis.cambioPrecio) }}</b><span>Cambiaron precio</span>
                     </button>
