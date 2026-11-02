@@ -3,7 +3,7 @@ import { Head, Link } from '@inertiajs/vue3';
 import { capitalizar, dia, fechaHora } from '../lib/formato';
 
 defineProps({
-    indice: { type: Object, required: true }, // { actualizado, propio, sitios: { cuponatic: ['2026-10-28', ...] }, competidores }
+    indice: { type: Object, required: true },
 });
 </script>
 

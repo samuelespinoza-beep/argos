@@ -7,7 +7,7 @@ import { capitalizar, descargarCsv, dia as formatoDia, entero, fechaHora, sol } 
 const props = defineProps({
     competidor: { type: String, required: true },
     fechas: { type: Array, required: true },
-    cruce: { type: Object, default: null }, // { propio, competidor, dia, fecha, fecha_ant, desde, ofertas{}, pares[] }; null = sin fechas en comun
+    cruce: { type: Object, default: null },
 });
 
 const D = computed(() => props.cruce);
@@ -22,7 +22,6 @@ const pares = computed(() =>
         const a = p[D.value.propio];
         const b = p[D.value.competidor];
         const dif = b.precio - a.precio;
-        // Menos de 1% de diferencia (S/ 29.90 vs S/ 29.99) cuenta como mismo precio.
         const igual = Math.abs(dif) < Math.max(a.precio, b.precio) * 0.01;
         return { ...p, a, b, ganaPrecio: igual ? 'igual' : dif > 0 ? 'a' : 'b' };
     }),
@@ -38,7 +37,6 @@ const OPC_CONFIANZA = [['', 'Todas'], ['alta', 'Alta'], ['media', 'Media (revisa
 const OPC_CAMBIO = [['', 'Todas'], ['vend', 'Vendieron'], ['precio', 'Cambió precio'], ['nueva', 'Nuevas'], ['retirada', 'Retiradas']];
 const limpiar = () => Object.assign(F, DEF);
 
-// "Cambios desde ayer" en un par: se cumple si pasa en cualquiera de los dos sitios.
 const CAMBIOS = {
     vend: (o) => o.vendidos > 0,
     precio: (o) => o.cambio_precio != null,
@@ -48,7 +46,6 @@ const CAMBIOS = {
 
 const valor = (p, k) => k.split('.').reduce((v, parte) => v?.[parte], p);
 
-// conPrecio = false ignora el filtro de precio (lo usan las tarjetas de precio para contar).
 function pasa(p, conPrecio = true) {
     const q = F.q.toLowerCase();
     return (!q || `${p.marca} ${p.a.titulo} ${p.b.titulo}`.toLowerCase().includes(q))
@@ -84,7 +81,6 @@ const kpis = computed(() => {
     };
 });
 
-// Las tarjetas de precio cuentan sin el filtro de precio: si no, al elegir una las otras marcarian 0.
 const precios = computed(() => {
     const base = pares.value.filter((p) => pasa(p, false));
     const grupo = (g) => base.filter((p) => p.ganaPrecio === g);
@@ -175,7 +171,6 @@ function exportar() {
                     </thead>
                     <tbody>
                         <tr v-for="p in filtrados" :key="p.a.id">
-                            <!-- Una oferta retirada no trae imagen: se usa la del otro sitio. -->
                             <td><img :src="p.a.imagen || p.b.imagen" loading="lazy" alt=""></td>
                             <td class="t">
                                 <a :href="p.a.url" target="_blank">{{ p.a.titulo }}</a>

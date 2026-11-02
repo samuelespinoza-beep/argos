@@ -5,14 +5,6 @@ namespace App\Scrapers;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-/**
- * Cuponatic Peru: API JSON publica de listados (la que usa su web), una
- * llamada por categoria. No necesita sesion.
- *
- * Las valoraciones "del comercio" solo estan en el HTML de cada oferta y
- * siempre dicen 3 (dato poco confiable), por eso no se leen: solo se guardan
- * las valoraciones del producto que trae la API.
- */
 class CuponaticScraper implements Scraper
 {
     public function sitio(): string
@@ -44,7 +36,6 @@ class CuponaticScraper implements Scraper
                 Log::warning("Cuponatic: {$categoria} llego al limite de {$config['limit']}, puede haber mas ofertas");
             }
 
-            // Una oferta puede estar en varias categorias: se guarda una vez.
             foreach ($lista as $d) {
                 $id = (string) $d['id_descuento'];
                 if (isset($porId[$id])) {
@@ -64,7 +55,7 @@ class CuponaticScraper implements Scraper
     {
         $precio = $this->monto($d['valor_oferta_plano'] ?? $d['valor_oferta'] ?? null);
         $normal = $this->monto($d['valor_original'] ?? null);
-        $calificacion = $this->monto($d['calificaciones_en_numero'] ?? null); // escala 0-10
+        $calificacion = $this->monto($d['calificaciones_en_numero'] ?? null);
 
         return [
             'external_id' => (string) $d['id_descuento'],

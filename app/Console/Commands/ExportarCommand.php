@@ -102,7 +102,7 @@ class ExportarCommand extends Command
     private function escribirCsv(string $archivo, array $filas): void
     {
         $f = fopen($archivo, 'w');
-        fwrite($f, "\xEF\xBB\xBF"); // BOM: Excel abre bien las tildes
+        fwrite($f, "\xEF\xBB\xBF");
         if ($filas) {
             fputcsv($f, array_keys($filas[0]), escape: '');
             foreach ($filas as $fila) {
@@ -112,7 +112,6 @@ class ExportarCommand extends Command
         fclose($f);
     }
 
-    /** Postgres devuelve los decimales como texto: en Excel deben ser numeros. */
     private function celda(mixed $valor): mixed
     {
         return is_string($valor) && is_numeric($valor) ? $valor + 0 : $valor;

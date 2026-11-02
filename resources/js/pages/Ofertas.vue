@@ -8,7 +8,7 @@ import { capitalizar, descargarCsv, dia as formatoDia, entero, fechaHora, sol, v
 const props = defineProps({
     sitio: { type: String, required: true },
     fechas: { type: Array, required: true },
-    foto: { type: Object, default: null }, // { sitio, dia, dia_ant, fecha, fecha_ant, desde, ofertas[], retiradas[] }; null = sin fotos
+    foto: { type: Object, default: null },
 });
 
 const D = computed(() => props.foto);
@@ -38,8 +38,6 @@ const categorias = computed(() =>
 const subcategorias = computed(() =>
     [...new Set(O.value.filter((o) => !F.cats.length || o._cats.some((c) => F.cats.includes(c))).map((o) => o.subcategoria).filter(Boolean))].sort(),
 );
-// La subcategoria solo aporta si alguna categoria se divide en 2 o mas (Cuponidad: Viajes -> Full Days, Hoteles...).
-// En Cuponatic repite el nombre de la categoria, asi que ahi el filtro se oculta.
 const subcategoriaAporta = computed(() => {
     const porCategoria = {};
     for (const o of O.value) {
@@ -74,7 +72,6 @@ function ordenarPor(k) {
     orden.value = k;
 }
 
-// conCambio = false ignora el filtro "Cambios" (lo usan los contadores de las tarjetas-filtro).
 function pasa(o, conCambio = true) {
     const q = F.q.toLowerCase();
     if (q && !`${o.titulo} ${o.marca} ${o.id}`.toLowerCase().includes(q)) return false;
@@ -86,7 +83,7 @@ function pasa(o, conCambio = true) {
     if (F.cambio === 'vend' && !(o.delta_vend > 0)) return false;
     if (F.cambio === 'precio' && vacio(o.delta_precio)) return false;
     if (F.cambio === 'nueva' && !o.nueva) return false;
-    if (F.cambio === 'retirada') return false; // las retiradas no estan en la foto de hoy: van en su propia tabla
+    if (F.cambio === 'retirada') return false;
     return true;
 }
 
@@ -112,7 +109,6 @@ const visibles = computed(() => filtradas.value.slice(0, limite.value));
 const kpis = computed(() => {
     const r = filtradas.value;
     const suma = (k) => r.reduce((s, o) => s + (Number(o[k]) || 0), 0);
-    // Las tarjetas-filtro cuentan sin el filtro "Cambios": si no, al activar "Nuevas" la otra marcaria 0.
     const base = O.value.filter((o) => pasa(o, false));
     return {
         deltaVend: suma('delta_vend'),

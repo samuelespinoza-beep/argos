@@ -1,9 +1,4 @@
 <!doctype html>
-<!--
-  Vista de ofertas de Argos (comando argos:vista). Los datos van incrustados en
-  "const D" para que el archivo funcione solo, sin servidor. Marcadores que
-  reemplaza el comando: __DATOS__, __SITIO__, __TITULO__, __DESDE__.
--->
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>__TITULO__</title>
 <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
@@ -15,7 +10,6 @@
 *{box-sizing:border-box}
 body{margin:0;font:14px/1.45 Lato,system-ui,sans-serif;background:var(--bg);color:var(--fg)}
 button,input,select{font:inherit;color:inherit}
-/* Barra superior */
 .top{background:var(--card);border-bottom:3px solid var(--accent);padding:12px 20px;display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;position:sticky;top:0;z-index:20}
 .brand{font-weight:900;font-size:20px;color:var(--accent)}.brand small{display:block;font-size:11px;font-weight:400;color:var(--muted)}
 .search{flex:1;min-width:220px;position:relative}
@@ -27,7 +21,6 @@ button,input,select{font:inherit;color:inherit}
 .btn:hover{border-color:var(--accent);color:var(--accent)}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
 .filters-toggle{display:none}
-/* Layout */
 .layout{display:grid;grid-template-columns:270px 1fr;gap:20px;padding:20px;max-width:1800px;margin:0 auto}
 aside{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px;align-self:start;position:sticky;top:76px;max-height:calc(100vh - 96px);overflow-y:auto}
 aside h2{font-size:13px;text-transform:uppercase;letter-spacing:.5px;margin:0 0 12px;display:flex;justify-content:space-between;align-items:center}
@@ -41,14 +34,12 @@ aside h2 button{font-size:12px;text-transform:none;letter-spacing:0;background:n
 .checks input{accent-color:var(--accent)}.checks .c{margin-left:auto;color:var(--muted);font-size:11px}
 .pills{display:flex;flex-wrap:wrap;gap:5px}.pills button{border:1px solid var(--line);background:var(--card);border-radius:14px;padding:3px 10px;font-size:12px;cursor:pointer}
 .pills button.on{background:var(--accent);border-color:var(--accent);color:#fff}
-/* Resultados */
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
 .kpi{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 14px}.kpi b{display:block;font-size:20px;font-weight:900}.kpi span{color:var(--muted);font-size:12px}
 .active{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;align-items:center;font-size:12px;color:var(--muted)}
 .chip{background:var(--accent-soft);color:var(--fg);border:1px solid var(--accent);border-radius:14px;padding:2px 6px 2px 10px;display:inline-flex;gap:6px;align-items:center}
 .chip button{border:0;background:none;cursor:pointer;color:var(--accent);font-weight:900;padding:0 2px}
 .empty{background:var(--card);border:1px dashed var(--line);border-radius:8px;padding:40px;text-align:center;color:var(--muted)}
-/* Tarjetas */
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .15s,transform .15s}
 .card:hover{box-shadow:0 6px 18px #0000001f;transform:translateY(-2px)}
@@ -73,7 +64,6 @@ aside h2 button{font-size:12px;text-transform:none;letter-spacing:0;background:n
 .cmp{font-size:12px;color:var(--muted);margin:-6px 0 12px}
 .sold b{color:var(--fg)}
 .tagline{font-size:11px;color:var(--muted)}
-/* Tabla */
 .tablewrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:8px}
 table{width:100%;border-collapse:collapse;font-size:13px}
 th{position:sticky;top:0;background:var(--card);text-align:left;padding:9px 8px;border-bottom:2px solid var(--line);cursor:pointer;white-space:nowrap;font-size:12px;user-select:none}
@@ -141,11 +131,9 @@ const int = v => v === '' || v == null ? '—' : Number(v).toLocaleString('es-PE
 const empty = v => v === '' || v == null;
 $('#meta').textContent = new Date(D.fecha).toLocaleString('es-PE', {dateStyle: 'medium', timeStyle: 'short'}) + ' · ' + O.length + ' ofertas';
 
-// ---- estado de filtros ----
 const DEF = { q: '', cats: [], sub: '', marca: '', tipo: '', pMin: '', pMax: '', dcto: 0, vend: 0, star: 0, val: '', vence: '', cambio: '', normal: false, disp: false };
 let F = structuredClone(DEF), view = 'cards', sortK = 'delta_vend', asc = false, limit = 60;
 
-// ---- construir controles ----
 const count = f => O.filter(f).length;
 const catNames = [...new Set(O.flatMap(o => o._cats))].sort();
 $('#fCat').innerHTML = catNames.map(c => '<label><input type="checkbox" value="' + esc(c) + '"> ' + esc(c.replace(/-/g, ' ')) + '<span class="c">' + count(o => o._cats.includes(c)) + '</span></label>').join('');
@@ -163,7 +151,6 @@ function fillSub() {
   $('#fSub').innerHTML = '<option value="">Todas</option>' + subs.map(s => '<option' + (s === F.sub ? ' selected' : '') + '>' + esc(s) + '</option>').join('');
 }
 
-// ---- filtrar ----
 function pass(o) {
   const q = F.q.toLowerCase();
   if (q && !(o.titulo + ' ' + o.marca + ' ' + o.id).toLowerCase().includes(q)) return false;
@@ -192,7 +179,6 @@ function sorted(rows) {
     return (typeof x === 'number' ? x - y : String(x).localeCompare(String(y))) * (asc ? 1 : -1); });
 }
 
-// ---- pintar ----
 function stars(n) { if (empty(n) || !n) return '<span class="tagline">sin calificación</span>';
   return '<span class="stars" title="' + n + ' de 5">★★★★★<span style="width:' + (n / 5 * 100) + '%">★★★★★</span></span>'; }
 const dv = (o, monto = true) => !D.fecha_ant ? '' : o.nueva ? '<span class="delta up">nueva</span>' : o.delta_vend > 0 ? '<span class="delta up">+' + int(o.delta_vend) + ' __DESDE__' + (monto && o.ingreso ? ' · ≈ ' + sol(o.ingreso) : '') + '</span>' : o.delta_vend < 0 ? '<span class="delta down">' + int(o.delta_vend) + '</span>' : '<span class="delta flat">sin cambio</span>';
@@ -260,7 +246,6 @@ function syncControls() {
 const update = () => { limit = 60; render(); };
 function resetAll() { F = structuredClone(DEF); fillSub(); update(); }
 
-// ---- eventos ----
 $('#q').addEventListener('input', e => { F.q = e.target.value; update(); });
 $('#fMarca').addEventListener('input', e => { F.marca = e.target.value; update(); });
 $('#pMin').addEventListener('input', e => { F.pMin = e.target.value; update(); });

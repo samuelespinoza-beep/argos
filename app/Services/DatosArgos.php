@@ -5,11 +5,6 @@ namespace App\Services;
 use App\Models\Corrida;
 use Illuminate\Support\Facades\Cache;
 
-/**
- * Datos de las paginas del panel, con cache. La foto de un dia no cambia una vez
- * tomada, asi que se calcula una vez y las siguientes visitas no tocan la base.
- * argos:scrape llama a olvidar() al terminar para que se vea la foto nueva.
- */
 class DatosArgos
 {
     private const DURACION = 60 * 60 * 24 * 7;

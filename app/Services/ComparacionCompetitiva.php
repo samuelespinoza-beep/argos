@@ -4,22 +4,12 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\DB;
 
-/**
- * Tablas de comparacion entre Cuponidad y un competidor, armadas con la foto
- * mas reciente de cada oferta activa (y el historial para las ventas). Cada
- * metodo devuelve filas listas para exportar o para leer en un reporte.
- */
 class ComparacionCompetitiva
 {
     public const PROPIO = 'cuponidad';
 
-    /** Contador publicado por el sitio x factor_vendidos (config/argos.php) = cupones reales. */
     private const FACTOR = 'CASE WHEN o.sitio = :propio THEN CAST(:factor_propio AS numeric) ELSE CAST(:factor_competidor AS numeric) END';
 
-    /**
-     * Foto mas reciente de cada oferta activa. marca_clave es la marca sin
-     * tildes, mayusculas ni simbolos, para emparejar entre sitios.
-     */
     private const ACTUAL = <<<'SQL'
         SELECT DISTINCT ON (o.id) o.*,
                regexp_replace(lower(translate(o.marca, 'áéíóúüñÁÉÍÓÚÜÑ', 'aeiouunaeiouun')), '[^a-z0-9]', '', 'g') AS marca_clave,
@@ -32,7 +22,6 @@ class ComparacionCompetitiva
 
     public function __construct(private string $competidor) {}
 
-    /** Dias de historial y ofertas por sitio. */
     public function historial(): array
     {
         return $this->consultar(<<<'SQL'
@@ -56,7 +45,6 @@ class ComparacionCompetitiva
             SQL);
     }
 
-    /** Marcas de ambos sitios: en comun, solo nosotros, solo ellos. */
     public function marcas(): array
     {
         return $this->consultar(<<<SQL
@@ -76,10 +64,6 @@ class ComparacionCompetitiva
             SQL);
     }
 
-    /**
-     * Marcas que no coinciden exacto pero una contiene a la otra (ej.
-     * "Cineplanet Provincia 1" / "Cineplanet"). Hay que revisarlas a mano.
-     */
     public function marcasParecidas(): array
     {
         return $this->consultar(<<<SQL
@@ -94,7 +78,6 @@ class ComparacionCompetitiva
             SQL);
     }
 
-    /** Cada oferta nuestra contra cada oferta suya de la misma marca. */
     public function precios(): array
     {
         return $this->consultar(<<<SQL
@@ -109,7 +92,6 @@ class ComparacionCompetitiva
             SQL);
     }
 
-    /** Ventas reales (diferencia de vendidos dia a dia) de los ultimos $dias dias. */
     public function ventas(int $dias): array
     {
         return $this->consultar(<<<'SQL'
@@ -125,7 +107,6 @@ class ComparacionCompetitiva
             SQL, ['dias' => $dias]);
     }
 
-    /** Todas las ofertas activas de ambos sitios, para filtrar en Excel. */
     public function ofertas(): array
     {
         return $this->consultar(<<<SQL
@@ -138,7 +119,6 @@ class ComparacionCompetitiva
 
     private function consultar(string $sql, array $extra = []): array
     {
-        // En orden: primero %ACTUAL%, que trae su propio %FACTOR%.
         $sql = str_replace(['%ACTUAL%', '%FACTOR%'], [self::ACTUAL, self::FACTOR], $sql);
         $parametros = [
             'propio' => self::PROPIO,
@@ -147,7 +127,6 @@ class ComparacionCompetitiva
             'factor_competidor' => (string) config("argos.sitios.{$this->competidor}.factor_vendidos", 1),
             ...$extra,
         ];
-        // Postgres rechaza parametros que la consulta no usa (historial no usa los factores).
         $parametros = array_filter($parametros, fn ($clave) => str_contains($sql, ":{$clave}"), ARRAY_FILTER_USE_KEY);
         $filas = DB::select($sql, $parametros);
 

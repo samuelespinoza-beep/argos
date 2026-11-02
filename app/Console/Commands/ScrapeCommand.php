@@ -54,7 +54,6 @@ class ScrapeCommand extends Command
             }
         }
 
-        // Si falla limpiar la cache, la foto del dia ya quedo guardada en la base.
         if ($conFoto) {
             try {
                 $datos->olvidar(collect($conFoto)->map(fn ($s) => $foto->fechas($s)->first())->unique()->all());

@@ -4,20 +4,12 @@ namespace App\Services;
 
 use Illuminate\Support\Str;
 
-/**
- * Empareja las ofertas de Cuponidad con las de un competidor en la misma fecha.
- *
- * Puntaje de un par (misma marca) = parecido del titulo (Jaccard de palabras, 0..1)
- *                                 + 0.5 si el precio es igual (±1%) o 0.25 si difiere menos de 15%.
- * Cada oferta se empareja con una sola del otro sitio (la de mayor puntaje).
- */
 class CruceOfertas
 {
     public const PROPIO = 'cuponidad';
 
     private const MINIMO = 0.6;
 
-    /** Entre MINIMO y ALTA la coincidencia es "media": probablemente la misma, hay que revisarla. */
     private const ALTA = 0.7;
 
     private const VACIAS = ['de', 'la', 'el', 'en', 'y', 'o', 'para', 'con', 'por', 'del', 'los', 'las', 'a', '1', '2',
@@ -51,11 +43,6 @@ class CruceOfertas
         ];
     }
 
-    /**
-     * Primero se emparejan las vigentes entre si, para que una retirada nunca le quite
-     * la pareja a una vigente. Las vigentes que quedan solas se buscan entre las
-     * retiradas del otro sitio ("la teniamos los dos, pero ellos la sacaron").
-     */
     private function emparejarConRetiradas(array $propio, array $otro): array
     {
         $pares = $this->emparejar($propio['ofertas'], $otro['ofertas']);
@@ -102,7 +89,6 @@ class CruceOfertas
             }
         }
 
-        // De mayor a menor puntaje, cada oferta se queda con su mejor pareja libre.
         usort($candidatos, fn ($x, $y) => $y['puntaje'] <=> $x['puntaje']);
         $usadasA = $usadasB = $pares = [];
         foreach ($candidatos as $c) {

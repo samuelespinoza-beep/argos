@@ -9,17 +9,8 @@ use App\Scrapers\Scraper;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-/**
- * Ejecuta un scraper y guarda el resultado: actualiza la ficha de cada oferta,
- * graba la foto del dia (oferta_snapshots) y marca como retiradas las ofertas
- * que ya no aparecen. Todo queda registrado en una fila de corridas.
- */
 class RegistrarOfertas
 {
-    /**
-     * Si una corrida encuentra menos de esta fraccion de las ofertas activas,
-     * se asume que el scraping fallo a medias y no se retira ninguna.
-     */
     private const MINIMO_PARA_RETIRAR = 0.5;
 
     public function ejecutar(Scraper $scraper): Corrida
@@ -71,7 +62,6 @@ class RegistrarOfertas
         return $corrida;
     }
 
-    /** @return bool true si la oferta es nueva */
     private function guardar(string $sitio, array $d, string $hoy, Corrida $corrida): bool
     {
         $oferta = Oferta::firstOrNew(['sitio' => $sitio, 'external_id' => $d['external_id']]);
@@ -93,7 +83,6 @@ class RegistrarOfertas
         }
         $oferta->save();
 
-        // Si corre dos veces el mismo dia, la foto del dia se actualiza.
         OfertaSnapshot::updateOrCreate(
             ['oferta_id' => $oferta->id, 'fecha' => $hoy],
             [

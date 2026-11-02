@@ -48,10 +48,6 @@ class PanelController extends Controller
         ]);
     }
 
-    /**
-     * Inertia recorre clave por clave todo prop que sea un arreglo: con ~1,100 ofertas
-     * eso tardaba ~1.6 s por visita. Como objeto (stdClass) pasa directo al JSON (~10 ms).
-     */
     private function comoObjeto(array $datos): object
     {
         return json_decode(json_encode($datos));

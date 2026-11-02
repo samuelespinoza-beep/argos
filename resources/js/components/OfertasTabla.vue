@@ -12,7 +12,6 @@ defineProps({
 });
 const emit = defineEmits(['ordenar']);
 
-// [campo, etiqueta, centrada]
 const columnas = [
     ['', ''], ['titulo', 'Oferta'], ['precio_oferta', 'Precio', true],
     ['delta_vend', 'Vendidos', true], ['ingreso', 'Total', true],

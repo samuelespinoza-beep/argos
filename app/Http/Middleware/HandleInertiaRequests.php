@@ -15,7 +15,6 @@ class HandleInertiaRequests extends Middleware
         return parent::version($request);
     }
 
-    /** "sitios" arma el menu de arriba en todas las paginas. */
     public function share(Request $request): array
     {
         return [

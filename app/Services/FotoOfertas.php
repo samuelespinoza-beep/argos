@@ -10,13 +10,8 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
-/**
- * La "foto" de un sitio en una fecha: sus ofertas con los cambios respecto a una
- * foto anterior (vendidos, ventas estimadas, precio, nuevas y retiradas).
- */
 class FotoOfertas
 {
-    /** De la mas reciente a la mas antigua. */
     public function fechas(string $sitio): Collection
     {
         return OfertaSnapshot::query()
@@ -25,10 +20,6 @@ class FotoOfertas
             ->map(fn ($f) => $f->toDateString());
     }
 
-    /**
-     * @param  string|null  $fecha   Foto a mostrar (por defecto la mas reciente)
-     * @param  string|null  $contra  Foto con la que comparar (por defecto la anterior a $fecha)
-     */
     public function armar(string $sitio, ?string $fecha = null, ?string $contra = null): array
     {
         $fechas = $this->fechas($sitio);
@@ -95,7 +86,6 @@ class FotoOfertas
                 'id' => $f->external_id,
                 'titulo' => $f->titulo,
                 'marca' => $f->marca ?? '',
-                // Una oferta puede estar en varias categorias (Cuponatic).
                 'categoria' => implode(' | ', $extra['categorias'] ?? [$f->categoria ?? 'sin categoria']),
                 'subcategoria' => $f->subcategoria,
                 'tipo' => $f->tipo,
@@ -116,7 +106,6 @@ class FotoOfertas
                 'nueva' => $contra && !$f->habia,
                 'vendidos_ant' => $real($f->vendidos_ant),
                 'delta_vend' => $delta,
-                // Ventas brutas estimadas del periodo: cupones vendidos x precio de la oferta.
                 'ingreso' => $delta > 0 ? round($delta * $precio, 2) : null,
                 'precio_ant' => $precioAnt,
                 'delta_precio' => $precioAnt !== null && abs($precio - $precioAnt) > 0.001 ? round($precio - $precioAnt, 2) : null,
@@ -140,13 +129,11 @@ class FotoOfertas
         return array_map(fn ($f) => [...(array) $f, 'precio_oferta' => (float) $f->precio_oferta, 'vendidos' => $real($f->vendidos)], $filas);
     }
 
-    /** Ver factor_vendidos en config/argos.php. */
     public function factorVendidos(string $sitio): float
     {
         return (float) config("argos.sitios.{$sitio}.factor_vendidos", 1);
     }
 
-    /** Pasa el contador publicado por el sitio a cupones reales. */
     private function vendidosReales(string $sitio): \Closure
     {
         $factor = $this->factorVendidos($sitio);

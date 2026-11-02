@@ -2,11 +2,6 @@
 
 namespace App\Scrapers;
 
-/**
- * Lee ofertas ya normalizadas desde un archivo JSON (una lista con las claves
- * de la interfaz Scraper). Sirve para cargar a la base el analisis puntual de
- * una pagina nueva, sin escribirle todavia un scraper propio.
- */
 class ArchivoScraper implements Scraper
 {
     private const CLAVES = [

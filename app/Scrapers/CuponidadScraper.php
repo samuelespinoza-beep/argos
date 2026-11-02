@@ -7,12 +7,6 @@ use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-/**
- * Cuponidad (sitio propio): no tiene API JSON. Las ofertas salen del sitemap
- * y los datos de cada pagina de oferta (HTML renderizado por Laravel):
- * JSON-LD Product + BreadcrumbList, precio normal en <del class="cd2-product__old">
- * y "N vendidos". Las estrellas de la pagina son decorativas: no hay valoraciones.
- */
 class CuponidadScraper implements Scraper
 {
     public function sitio(): string
@@ -25,7 +19,6 @@ class CuponidadScraper implements Scraper
         $config = config('argos.sitios.cuponidad');
         $urls = $this->urlsDeOfertas($config);
 
-        // Se piden de a pocas paginas a la vez para no cargar el servidor.
         foreach (array_chunk($urls, $config['concurrencia'], true) as $lote) {
             $respuestas = Http::pool(fn (Pool $pool) => array_map(
                 fn ($url) => $pool->as($url)->withHeaders(['User-Agent' => $config['user_agent']])->timeout(40)->get($url),
@@ -45,7 +38,7 @@ class CuponidadScraper implements Scraper
         }
     }
 
-    /** @return array<string, string> url => categoria del sitemap */
+    /** @return array<string, string> */
     private function urlsDeOfertas(array $config): array
     {
         $urls = [];
@@ -99,7 +92,7 @@ class CuponidadScraper implements Scraper
         ];
     }
 
-    /** @return array<string, array> JSON-LD de la pagina indexado por @type */
+    /** @return array<string, array> */
     private function jsonLd(string $html): array
     {
         preg_match_all('#<script type="application/ld\+json">(.*?)</script>#s', $html, $bloques);

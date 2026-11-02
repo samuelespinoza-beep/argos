@@ -7,7 +7,6 @@ use Tests\TestCase;
 
 class ExampleTest extends TestCase
 {
-    // La portada consulta la base (indice de fotos): se migra la base "testing" antes de cada test.
     use RefreshDatabase;
 
     /**

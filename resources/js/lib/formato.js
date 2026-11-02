@@ -7,12 +7,10 @@ export const entero = (v) => (vacio(v) ? '—' : Number(v).toLocaleString('es-PE
 
 export const fechaHora = (iso) => new Date(iso).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' });
 
-// "2026-10-27" -> "27/10/2026" (sin pasar por Date para no correr la zona horaria).
 export const dia = (ymd) => ymd.split('-').reverse().join('/');
 
 export const capitalizar = (s) => (s ? s[0].toUpperCase() + s.slice(1) : s);
 
-/** Descarga filas como CSV (con BOM para que Excel respete las tildes). */
 export function descargarCsv(nombre, columnas, filas) {
     const celda = (v) => {
         const s = String(v ?? '');

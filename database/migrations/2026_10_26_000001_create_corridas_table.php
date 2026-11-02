@@ -6,16 +6,12 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Una fila por cada ejecucion de un scraper: cuando corrio, como termino
-     * y cuantas ofertas encontro. Sirve para auditar huecos en el historial.
-     */
     public function up(): void
     {
         Schema::create('corridas', function (Blueprint $table) {
             $table->id();
-            $table->string('sitio', 40)->index();               // cuponidad, cuponatic...
-            $table->string('estado', 20)->default('en_curso');  // en_curso | ok | error
+            $table->string('sitio', 40)->index();
+            $table->string('estado', 20)->default('en_curso');
             $table->timestamp('iniciada_at');
             $table->timestamp('terminada_at')->nullable();
             $table->unsignedInteger('ofertas_encontradas')->default(0);

@@ -12,8 +12,6 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Detras de un proxy con https (ngrok, CloudFront) los assets se generan con https.
-        // '*' confia en cualquier proxy: en un servidor conviene poner su IP.
         $middleware->trustProxies(at: '*');
 
         $middleware->web(append: [
