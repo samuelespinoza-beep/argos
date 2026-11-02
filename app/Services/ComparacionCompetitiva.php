@@ -13,6 +13,9 @@ class ComparacionCompetitiva
 {
     public const PROPIO = 'cuponidad';
 
+    /** Contador publicado por el sitio x factor_vendidos (config/argos.php) = cupones reales. */
+    private const FACTOR = 'CASE WHEN o.sitio = :propio THEN CAST(:factor_propio AS numeric) ELSE CAST(:factor_competidor AS numeric) END';
+
     /**
      * Foto mas reciente de cada oferta activa. marca_clave es la marca sin
      * tildes, mayusculas ni simbolos, para emparejar entre sitios.
@@ -20,7 +23,7 @@ class ComparacionCompetitiva
     private const ACTUAL = <<<'SQL'
         SELECT DISTINCT ON (o.id) o.*,
                regexp_replace(lower(translate(o.marca, 'áéíóúüñÁÉÍÓÚÜÑ', 'aeiouunaeiouun')), '[^a-z0-9]', '', 'g') AS marca_clave,
-               s.fecha, s.precio_oferta, s.precio_normal, s.descuento_pct, s.vendidos,
+               s.fecha, s.precio_oferta, s.precio_normal, s.descuento_pct, ROUND(s.vendidos * %FACTOR%)::int AS vendidos,
                s.valoraciones, s.estrellas, s.estado
         FROM ofertas o JOIN oferta_snapshots s ON s.oferta_id = o.id
         WHERE o.activa AND o.sitio IN (:propio, :competidor)
@@ -114,7 +117,7 @@ class ComparacionCompetitiva
               SELECT s.oferta_id, s.precio_oferta,
                      s.vendidos - LAG(s.vendidos) OVER (PARTITION BY s.oferta_id ORDER BY s.fecha) AS delta
               FROM oferta_snapshots s WHERE s.fecha >= CURRENT_DATE - CAST(:dias AS int))
-            SELECT o.sitio, o.marca, o.titulo, o.categoria, SUM(d.delta) AS ventas_periodo,
+            SELECT o.sitio, o.marca, o.titulo, o.categoria, ROUND(SUM(d.delta) * %FACTOR%)::int AS ventas_periodo,
                    COUNT(d.delta) AS dias_medidos, MAX(d.precio_oferta) AS precio, o.url
             FROM d JOIN ofertas o ON o.id = d.oferta_id
             WHERE o.sitio IN (:propio, :competidor) AND d.delta IS NOT NULL AND d.delta >= 0
@@ -135,8 +138,18 @@ class ComparacionCompetitiva
 
     private function consultar(string $sql, array $extra = []): array
     {
-        $sql = str_replace('%ACTUAL%', self::ACTUAL, $sql);
-        $filas = DB::select($sql, ['propio' => self::PROPIO, 'competidor' => $this->competidor, ...$extra]);
+        // En orden: primero %ACTUAL%, que trae su propio %FACTOR%.
+        $sql = str_replace(['%ACTUAL%', '%FACTOR%'], [self::ACTUAL, self::FACTOR], $sql);
+        $parametros = [
+            'propio' => self::PROPIO,
+            'competidor' => $this->competidor,
+            'factor_propio' => (string) config('argos.sitios.' . self::PROPIO . '.factor_vendidos', 1),
+            'factor_competidor' => (string) config("argos.sitios.{$this->competidor}.factor_vendidos", 1),
+            ...$extra,
+        ];
+        // Postgres rechaza parametros que la consulta no usa (historial no usa los factores).
+        $parametros = array_filter($parametros, fn ($clave) => str_contains($sql, ":{$clave}"), ARRAY_FILTER_USE_KEY);
+        $filas = DB::select($sql, $parametros);
 
         return array_map(fn ($f) => (array) $f, $filas);
     }

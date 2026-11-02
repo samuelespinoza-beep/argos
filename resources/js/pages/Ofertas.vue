@@ -210,6 +210,9 @@ function exportar() {
                         Comparado con la foto del {{ fechaHora(D.fecha_ant) }} · {{ D.retiradas.length }} ofertas retiradas desde entonces (al final de la página).<br>
                         Ventas estimadas = vendidos en el periodo × precio de la oferta. Son ventas brutas (no la comisión del sitio), calculadas con el
                         contador público de vendidos, que no está auditado.
+                        <template v-if="D.factor_vendidos && D.factor_vendidos !== 1">
+                            El contador público de este sitio está inflado (cuenta cada cupón dos veces): aquí se muestran los cupones reales (contador × {{ D.factor_vendidos }}).
+                        </template>
                     </template>
                     <template v-else>Primera foto de este sitio: todavía no hay con qué comparar.</template>
                 </div>

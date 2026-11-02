@@ -52,6 +52,7 @@ class FotoOfertas
             'fecha' => $this->capturadoEl($sitio, $fecha),
             'fecha_ant' => $contra ? $this->capturadoEl($sitio, $contra) : null,
             'desde' => $this->desde($fecha, $contra),
+            'factor_vendidos' => $this->factorVendidos($sitio),
             'ofertas' => $this->ofertas($sitio, $fecha, $contra),
             'retiradas' => $contra ? $this->retiradas($sitio, $fecha, $contra) : [],
         ];
@@ -81,12 +82,14 @@ class FotoOfertas
             ORDER BY o.id
             SQL, ['sitio' => $sitio, 'fecha' => $fecha, 'contra' => $contra]);
 
-        return array_map(function ($f) use ($contra) {
+        $real = $this->vendidosReales($sitio);
+
+        return array_map(function ($f) use ($contra, $real) {
             $extra = json_decode($f->extra ?? 'null', true) ?: [];
             $precio = (float) $f->precio_oferta;
             $normal = $f->precio_normal !== null ? (float) $f->precio_normal : null;
             $precioAnt = $f->precio_ant !== null ? (float) $f->precio_ant : null;
-            $delta = $f->habia && $f->vendidos !== null && $f->vendidos_ant !== null ? $f->vendidos - $f->vendidos_ant : null;
+            $delta = $f->habia && $f->vendidos !== null && $f->vendidos_ant !== null ? $real($f->vendidos - $f->vendidos_ant) : null;
 
             return [
                 'id' => $f->external_id,
@@ -105,13 +108,13 @@ class FotoOfertas
                 'valoraciones' => $f->valoraciones,
                 'estrellas_5' => $f->estrellas !== null ? (float) $f->estrellas : null,
                 'valoraciones_de' => $f->valoraciones ? 'producto' : null,
-                'vendidos' => $f->vendidos,
+                'vendidos' => $real($f->vendidos),
                 'stock_maximo' => $f->stock_maximo,
                 'estado' => $f->estado,
                 'vencido' => $extra['vencido'] ?? false,
                 'fecha_termino' => $f->fecha_termino ? "{$f->fecha_termino} 23:59:00" : null,
                 'nueva' => $contra && !$f->habia,
-                'vendidos_ant' => $f->vendidos_ant,
+                'vendidos_ant' => $real($f->vendidos_ant),
                 'delta_vend' => $delta,
                 // Ventas brutas estimadas del periodo: cupones vendidos x precio de la oferta.
                 'ingreso' => $delta > 0 ? round($delta * $precio, 2) : null,
@@ -132,7 +135,23 @@ class FotoOfertas
             ORDER BY p.vendidos DESC NULLS LAST, o.id
             SQL, ['sitio' => $sitio, 'fecha' => $fecha, 'contra' => $contra]);
 
-        return array_map(fn ($f) => [...(array) $f, 'precio_oferta' => (float) $f->precio_oferta], $filas);
+        $real = $this->vendidosReales($sitio);
+
+        return array_map(fn ($f) => [...(array) $f, 'precio_oferta' => (float) $f->precio_oferta, 'vendidos' => $real($f->vendidos)], $filas);
+    }
+
+    /** Ver factor_vendidos en config/argos.php. */
+    public function factorVendidos(string $sitio): float
+    {
+        return (float) config("argos.sitios.{$sitio}.factor_vendidos", 1);
+    }
+
+    /** Pasa el contador publicado por el sitio a cupones reales. */
+    private function vendidosReales(string $sitio): \Closure
+    {
+        $factor = $this->factorVendidos($sitio);
+
+        return fn (?int $vendidos) => $vendidos === null ? null : (int) round($vendidos * $factor);
     }
 
     private function desde(string $fecha, ?string $contra): string
