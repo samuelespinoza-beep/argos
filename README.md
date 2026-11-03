@@ -1,58 +1,81 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Argos
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Argos vigila a Cuponidad (cuponidad.pe) y a su competencia. Todos los días a las 06:00 (hora de Lima) toma una foto de cada oferta de cada sitio (precio, descuento y vendidos) y la compara con la foto anterior para mostrar:
 
-## About Laravel
+- Cuánto vendió cada oferta desde la foto anterior y cuánto ingreso representa.
+- Qué ofertas son nuevas, cuáles se retiraron y cuáles cambiaron de precio.
+- Las ofertas que Cuponidad y un competidor tienen en común, con sus precios y ventas lado a lado.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Sitios configurados: **Cuponidad** (sitio propio) y **Cuponatic** (competencia).
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Stack: Laravel 13, Vue 3 con Inertia, Postgres y Redis, todo levantado con Laravel Sail.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Puesta en marcha
 
-## Learning Laravel
+Requiere Docker. El `Makefile` envuelve los comandos de Sail (`make help` los lista todos).
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
-```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+```sh
+cp .env.example .env    # luego ajustar: DB_CONNECTION=pgsql, DB_HOST=pgsql, REDIS_HOST=redis, APP_PORT=8070
+composer install        # o: docker run --rm -v "$PWD":/app -w /app composer install
+make dev                # app, Postgres, Redis y el scheduler
+./vendor/bin/sail artisan key:generate
+make migrate
+./vendor/bin/sail npm install
+make build
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+| Servicio | Dirección |
+|---|---|
+| Panel | http://localhost:8070 |
+| Postgres (desde el host) | localhost:5433 |
+| Redis (desde el host) | localhost:6382 |
 
-## Contributing
+Las credenciales van solo en `.env`, que no se versiona.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Uso diario
 
-## Code of Conduct
+El contenedor `scheduler` corre `argos:scrape` todos los días a las 06:00 (Lima). Solo funciona mientras los contenedores estén arriba: con `make down` no hay foto ese día. Las ventas de un día son, por eso, lo vendido entre las 06:00 del día anterior y las 06:00 de ese día.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+| Comando | Qué hace |
+|---|---|
+| `make scrape` / `make scrape SITIO=cuponatic` | Toma la foto del día ahora, de todos los sitios o de uno |
+| `make vista SITIO=cuponidad` | HTML con filtros de las ofertas y sus cambios (`argos:vista`, opciones `--fecha` y `--contra`) |
+| `make exportar SITIO=cuponatic` | Excel y CSV de Cuponidad contra un competidor (`argos:exportar`, opción `--dias`) |
+| `sail artisan argos:importar <sitio> <archivo.json>` | Carga un JSON de ofertas normalizadas como foto del día de un sitio (análisis puntuales) |
+| `make front` | Vite en modo desarrollo |
+| `make build` | Compila el front; necesario si no está corriendo `make front` |
+| `make clear` | Limpia config, rutas, vistas y caché |
+| `make test` | Corre los tests |
 
-## Security Vulnerabilities
+Los HTML, Excel y CSV que generan los comandos quedan en `storage/analisis/<fecha>-<sitio>/`. Esa carpeta no se versiona.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Panel
 
-## License
+| Ruta | Página |
+|---|---|
+| `/` | Inicio: cada sitio con su última foto y cuántas fotos tiene |
+| `/ofertas/{sitio}/{dia?}` | Ofertas de un sitio y sus cambios respecto a la foto anterior |
+| `/comparar/{competidor?}/{dia?}` | Ofertas en común entre Cuponidad y un competidor |
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+`PanelController` elige la página y le pasa los datos como props de Inertia. Los datos que arma `DatosArgos` se guardan en la caché de Redis, así que después de cambiar la lógica de cálculo hay que correr `make clear` para ver el cambio.
+
+## Estructura
+
+| Carpeta / archivo | Contenido |
+|---|---|
+| `config/argos.php` | Sitios, hora diaria y parámetros de cada scraper |
+| `app/Scrapers/` | Un scraper por sitio: Cuponidad lee su sitemap y cada página de oferta; Cuponatic usa su API pública por categoría. `ArchivoScraper` lee un JSON (para `argos:importar`) |
+| `app/Services/RegistrarOfertas.php` | Guarda las ofertas (`ofertas`) y su foto del día (`oferta_snapshots`) dentro de una `corrida` |
+| `app/Services/FotoOfertas.php` | Arma la foto de un sitio y su diferencia con la foto anterior |
+| `app/Services/ComparacionCompetitiva.php`, `CruceOfertas.php` | Cruce de ofertas entre sitios y ventas por período |
+| `app/Services/DatosArgos.php` | Datos del panel, con caché |
+| `resources/js/pages/` | Páginas Vue: `Inicio`, `Ofertas`, `Comparar` |
+| `resources/argos/vista-ofertas.html` | Plantilla del HTML de `argos:vista` |
+
+Tablas: `corridas` (cada ejecución del scraping), `ofertas` (una fila por oferta y sitio) y `oferta_snapshots` (la foto diaria de cada oferta).
+
+## Decisiones a tener en cuenta
+
+- **Los vendidos de Cuponidad se dividen entre 2** (`factor_vendidos => 0.5` en `config/argos.php`). El contador público de cuponidad.pe cuenta cada cupón dos veces; se confirmó contra la base de Cuponidad el 02/11/2026 (518 en el contador = 259 cupones). En la base de Argos se guarda el contador tal como se publica y el factor se aplica al leer, así que se puede revertir sin tocar datos. Si Cuponidad corrige su contador, el factor tendría que aplicarse solo a las fechas anteriores a la corrección.
+- **El panel no envía Referer** (`<meta name="referrer" content="no-referrer">` en `app.blade.php`). Abrir una oferta de cuponidad.pe desde el panel dejaba cookies con `http://localhost`, y el WAF de CloudFront de cuponidad.pe respondía 403 a todas las visitas siguientes.
+- **Los cambios se hacen solo del lado de Argos.** Argos no tiene acceso a la base de datos de Cuponidad.
