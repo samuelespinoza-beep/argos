@@ -13,7 +13,7 @@ const props = defineProps({
 const D = computed(() => props.cruce);
 const error = computed(() => (props.cruce ? '' : `No hay fechas con foto de Cuponidad y "${props.competidor}" a la vez. Corre "make scrape".`));
 
-const cambiarDia = (d) => router.get(`/comparar/${props.competidor}/${d}`, {}, { preserveState: true });
+const cambiarDia = (d) => router.get(`/comparar/${props.competidor}`, { dia: d }, { preserveState: true });
 const nombreA = computed(() => capitalizar(D.value?.propio ?? ''));
 const nombreB = computed(() => capitalizar(D.value?.competidor ?? ''));
 

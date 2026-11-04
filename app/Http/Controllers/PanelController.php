@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\CruceOfertas;
 use App\Services\DatosArgos;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -16,8 +17,9 @@ class PanelController extends Controller
         return Inertia::render('Inicio', ['indice' => $this->datos->indice()]);
     }
 
-    public function ofertas(string $sitio, ?string $dia = null): Response
+    public function ofertas(Request $request, string $sitio): Response
     {
+        $dia = $request->query('dia') ?: null;
         abort_unless(array_key_exists($sitio, config('argos.sitios')), 404);
 
         $fechas = $this->datos->indice()['sitios'][$sitio] ?? [];
@@ -31,8 +33,9 @@ class PanelController extends Controller
         ]);
     }
 
-    public function comparar(?string $competidor = null, ?string $dia = null): Response
+    public function comparar(Request $request, ?string $competidor = null): Response
     {
+        $dia = $request->query('dia') ?: null;
         $competidores = $this->datos->indice()['competidores'];
         $competidor ??= array_key_first($competidores) ?? array_key_first(array_diff_key(config('argos.sitios'), [CruceOfertas::PROPIO => 1]));
         abort_unless($competidor !== CruceOfertas::PROPIO && array_key_exists($competidor, config('argos.sitios')), 404);

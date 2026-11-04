@@ -5,7 +5,10 @@ import { capitalizar } from '../lib/formato';
 
 const page = usePage();
 const sitios = computed(() => page.props.sitios ?? []);
-const activo = (prefijo) => page.url === prefijo || page.url.startsWith(`${prefijo}/`);
+const activo = (prefijo) => {
+    const ruta = page.url.split('?')[0];
+    return ruta === prefijo || ruta.startsWith(`${prefijo}/`);
+};
 </script>
 
 <template>

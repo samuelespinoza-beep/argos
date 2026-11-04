@@ -54,8 +54,8 @@ Los HTML, Excel y CSV que generan los comandos quedan en `storage/analisis/<fech
 | Ruta | Página |
 |---|---|
 | `/` | Inicio: cada sitio con su última foto y cuántas fotos tiene |
-| `/ofertas/{sitio}/{dia?}` | Ofertas de un sitio y sus cambios respecto a la foto anterior |
-| `/comparar/{competidor?}/{dia?}` | Ofertas en común entre Cuponidad y un competidor |
+| `/ofertas/{sitio}?dia=AAAA-MM-DD` | Ofertas de un sitio y sus cambios respecto a la foto anterior |
+| `/comparar/{competidor?}?dia=AAAA-MM-DD` | Ofertas en común entre Cuponidad y un competidor |
 
 `PanelController` elige la página y le pasa los datos como props de Inertia. Los datos que arma `DatosArgos` se guardan en la caché de Redis, así que después de cambiar la lógica de cálculo hay que correr `make clear` para ver el cambio.
 

@@ -14,7 +14,7 @@ const props = defineProps({
 const D = computed(() => props.foto);
 const error = computed(() => (props.foto ? '' : `No hay fotos de "${props.sitio}" en la base. Corre "make scrape".`));
 
-const cambiarDia = (d) => router.get(`/ofertas/${props.sitio}/${d}`, {}, { preserveState: true });
+const cambiarDia = (d) => router.get(`/ofertas/${props.sitio}`, { dia: d }, { preserveState: true });
 
 const O = computed(() =>
     (D.value?.ofertas ?? []).map((o) => ({ ...o, _cats: o.categoria.split(' | ') })),
